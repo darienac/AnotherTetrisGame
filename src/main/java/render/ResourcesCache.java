@@ -1,0 +1,90 @@
+package render;
+
+public class ResourcesCache {
+    private static ResourcesCache resourcesCache = null;
+
+    private final Texture metalReflect;
+
+    private final Model tetrisBlock;
+    private final Model ghostBlock;
+    private final Material tetrisBlockMaterial;
+    private final Model wallV;
+    private final Model wallH;
+    private final Model wallJ;
+    private final Model labelScore;
+    private final Model labelLevel;
+    private final Model[] digits;
+
+    private ResourcesCache() throws Exception {
+        metalReflect = new Texture("metalReflection.png");
+
+        tetrisBlock = new Model("tetrisBlock.obj");
+        tetrisBlockMaterial = tetrisBlock.getMeshes()[0].getMaterial();
+        ghostBlock = new Model("ghostBlock.obj");
+        wallV = new Model("pipeEdge.obj");
+        wallV.getMeshes()[0].getMaterial().setReflectMap(metalReflect);
+        wallH = new Model("pipeEdgeH.obj");
+        wallH.getMeshes()[0].getMaterial().setReflectMap(metalReflect);
+        wallJ = new Model("pipeJoin.obj");
+        wallJ.getMeshes()[0].getMaterial().setReflectMap(metalReflect);
+
+        labelScore = new TexturePlaneModel(new Texture("score.png"), 24.0f, 8.0f);
+        labelLevel = new TexturePlaneModel(new Texture("level.png"), 24.0f, 8.0f);
+        Texture digitsTexture = new Texture("digits.png");
+        digits = new Model[10];
+        for (int i = 0; i < 10; i++) {
+            digits[i] = new TexturePlaneModel(digitsTexture, 4.0f, 8.0f, i * 0.1f, 0.0f, (i + 1) * 0.1f, 1.0f);
+        }
+    }
+
+    public static ResourcesCache getInstance() throws Exception {
+        if (resourcesCache == null) {
+            resourcesCache = new ResourcesCache();
+        }
+        return resourcesCache;
+    }
+
+    public Texture getMetalReflect() {
+        return metalReflect;
+    }
+
+    public Model getTetrisBlock() {
+        return tetrisBlock;
+    }
+
+    public Model getGhostBlock() {
+        return ghostBlock;
+    }
+
+    public Material getTetrisBlockMaterial() {
+        return tetrisBlockMaterial;
+    }
+
+    public Model getWallV() {
+        return wallV;
+    }
+
+    public Model getWallH() {
+        return wallH;
+    }
+
+    public Model getWallJ() {
+        return wallJ;
+    }
+
+    public Model getLabelScore() {
+        return labelScore;
+    }
+
+    public Model getLabelLevel() {
+        return labelLevel;
+    }
+
+    public Model[] getDigits() {
+        return digits;
+    }
+
+    public ResourcesCache getResourcesCache() {
+        return resourcesCache;
+    }
+}

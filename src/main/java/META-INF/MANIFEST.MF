@@ -1,0 +1,36 @@
+Manifest-Version: 1.0
+Main-Class: 
+Class-Path: lwjgl-lmdb-3.3.1.jar lwjgl-zstd-3.3.1.jar lwjgl-zstd-3.3.1-n
+ atives-windows.jar joml-1.10.4.jar lwjgl-openal-3.3.1.jar lwjgl-spvc-3.
+ 3.1.jar lwjgl-openal-3.3.1-natives-windows.jar lwjgl-meshoptimizer-3.3.
+ 1.jar lwjgl-vma-3.3.1-natives-windows.jar lwjgl-tinyfd-3.3.1.jar lwjgl-
+ par-3.3.1.jar lwjgl-opengles-3.3.1-natives-windows.jar lwjgl-llvm-3.3.1
+ -natives-windows.jar lwjgl-llvm-3.3.1.jar lwjgl-nuklear-3.3.1-natives-w
+ indows.jar lwjgl-tootle-3.3.1-natives-windows.jar lwjgl-rpmalloc-3.3.1.
+ jar lwjgl-par-3.3.1-natives-windows.jar lwjgl-xxhash-3.3.1-natives-wind
+ ows.jar lwjgl-glfw-3.3.1-natives-windows.jar lwjgl-rpmalloc-3.3.1-nativ
+ es-windows.jar lwjgl-nfd-3.3.1-natives-windows.jar lwjgl-xxhash-3.3.1.j
+ ar lwjgl-spvc-3.3.1-natives-windows.jar lwjgl-vma-3.3.1.jar lwjgl-yoga-
+ 3.3.1-natives-windows.jar lwjgl-openvr-3.3.1.jar lwjgl-opengles-3.3.1.j
+ ar lwjgl-bgfx-3.3.1.jar lwjgl-assimp-3.3.1-natives-windows.jar lwjgl-me
+ ow-3.3.1-natives-windows.jar lwjgl-opus-3.3.1-natives-windows.jar lwjgl
+ -ovr-3.3.1.jar lwjgl-vulkan-3.3.1.jar lwjgl-sse-3.3.1-natives-windows.j
+ ar lwjgl-jemalloc-3.3.1-natives-windows.jar lwjgl-lz4-3.3.1.jar lwjgl-o
+ penxr-3.3.1.jar lwjgl-egl-3.3.1.jar lwjgl-odbc-3.3.1.jar lwjgl-remotery
+ -3.3.1-natives-windows.jar lwjgl-nuklear-3.3.1.jar lwjgl-shaderc-3.3.1.
+ jar lwjgl-lmdb-3.3.1-natives-windows.jar lwjgl-shaderc-3.3.1-natives-wi
+ ndows.jar lwjgl-glfw-3.3.1.jar lwjgl-ovr-3.3.1-natives-windows.jar lwjg
+ l-stb-3.3.1-natives-windows.jar lwjgl-jawt-3.3.1.jar lwjgl-yoga-3.3.1.j
+ ar lwjgl-meow-3.3.1.jar lwjgl-opus-3.3.1.jar lwjgl-3.3.1-natives-window
+ s.jar lwjgl-remotery-3.3.1.jar lwjgl-tinyexr-3.3.1-natives-windows.jar 
+ lwjgl-libdivide-3.3.1-natives-windows.jar lwjgl-jemalloc-3.3.1.jar lwjg
+ l-tinyfd-3.3.1-natives-windows.jar lwjgl-lz4-3.3.1-natives-windows.jar 
+ lwjgl-opengl-3.3.1-natives-windows.jar lwjgl-meshoptimizer-3.3.1-native
+ s-windows.jar lwjgl-nfd-3.3.1.jar lwjgl-stb-3.3.1.jar lwjgl-tinyexr-3.3
+ .1.jar lwjgl-opencl-3.3.1.jar lwjgl-tootle-3.3.1.jar lwjgl-openxr-3.3.1
+ -natives-windows.jar lwjgl-bgfx-3.3.1-natives-windows.jar lwjgl-3.3.1.j
+ ar lwjgl-cuda-3.3.1.jar lwjgl-assimp-3.3.1.jar lwjgl-opengl-3.3.1.jar l
+ wjgl-libdivide-3.3.1.jar lwjgl-openvr-3.3.1-natives-windows.jar lwjgl-n
+ anovg-3.3.1.jar lwjgl-nanovg-3.3.1-natives-windows.jar lwjgl-sse-3.3.1.
+ jar
+
