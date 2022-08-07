@@ -18,23 +18,34 @@ import java.util.Set;
  * Runs independent of a consistent time interval, grabs time from GLFW.glfwGetTime()
  */
 public class GameEngine {
+    private static final int PIECE_FALL_STEPS = 20;
+    private static final double GAME_SPEED = 0.1;
+
     private GameState state;
     private Scene scene;
     private GameWindow window;
     private Controls controls;
     private double lastTime;
-    private double lastTimeStep;
+    private double lastTimeStepFall;
+    private double lastTimeStepGame;
+    private int fallSteps;
+    private int gameSteps;
     private int dirFramesHeld;
     private int turnDirFramesHeld;
-    int dirLast;
-    int turnDirLast;
+    private int dirLast;
+    private int turnDirLast;
+    private boolean pieceOnGround;
+    private int stepsPieceOnGround = 0;
 
     public GameEngine(GameState state, Scene scene, GameWindow window) {
         controls = new Controls();
         lastTime = GLFW.glfwGetTime();
-        lastTimeStep = lastTime;
+        lastTimeStepFall = lastTime;
+        lastTimeStepGame = lastTime;
         dirLast = 0;
         turnDirLast = 0;
+        fallSteps = 0;
+        gameSteps = 0;
 
         GLFW.glfwSetKeyCallback(window.getWindowId(), new GLFWKeyCallback() {
             @Override
@@ -46,13 +57,16 @@ public class GameEngine {
         this.state = state;
         this.scene = scene;
         respawnPiece();
+        updateGameSpeed();
     }
 
     public void run() {
         double time = GLFW.glfwGetTime();
         double delta = time - lastTime;
-        int steps = (int) ((time - lastTimeStep) / state.getGameSpeed());
-        lastTimeStep = lastTimeStep + steps * state.getGameSpeed();
+        int stepsFall = (int) ((time - lastTimeStepFall) / state.getGameSpeed());
+        lastTimeStepFall = lastTimeStepFall + stepsFall * state.getGameSpeed();
+        int stepsGame = (int) ((time - lastTimeStepGame) / GAME_SPEED);
+        lastTimeStepGame = lastTimeStepGame + stepsGame * GAME_SPEED;
         lastTime = time;
 
         Tetrimino gamePiece = state.getGamePiece();
@@ -62,17 +76,27 @@ public class GameEngine {
         if (controls.turnLeft) {
             controls.turnLeft = false;
             gamePiece.setRotation(gamePiece.getRotation() - 1);
-            if (!tryWallKicks(-1)) {
+            if (tryWallKicks(-1)) {
+                if (gamePiece.getId() != 3) {
+                    pieceOnGround = false;
+                }
+            } else {
                 gamePiece.setRotation(gamePiece.getRotation() + 1);
             }
         }
         if (controls.turnRight) {
             controls.turnRight = false;
             gamePiece.setRotation(gamePiece.getRotation() + 1);
-            if (!tryWallKicks(1)) {
+            if (tryWallKicks(1)) {
+                if (gamePiece.getId() != 3) {
+                    pieceOnGround = false;
+                }
+            } else {
                 gamePiece.setRotation(gamePiece.getRotation() - 1);
+                pieceOnGround = false;
             }
         }
+        // TODO: Make some sort of prevention for infinite rotations in place
         if (controls.up) {
             controls.up = false;
             gamePiece.setY(state.getPieceLowestPos());
@@ -96,20 +120,42 @@ public class GameEngine {
 
         scene.getCamera().setPosition(new Vector3f(0.0f + controls.cameraX * 2.5f, 2.0f + controls.cameraY * 2.5f, 10.0f));
 
-        for (int i = 0; i < steps; i++) {
-            runStep();
+        for (int i = 0; i < stepsGame; i++) {
+            runStepGame();
+        }
+        for (int i = 0; i < stepsFall; i++) {
+            runStepFall();
         }
     }
 
-    public void runStep() {
+    public void runStepFall() {
         Tetrimino gamePiece = state.getGamePiece();
-        int gameTicks = state.getGameTicks();
+
+        if (fallSteps % PIECE_FALL_STEPS == 0 || controls.down) {
+            gamePiece.setY(gamePiece.getY() - 1);
+            pieceOnGround = false;
+            if (!state.isValidTilePos()) {
+                gamePiece.setY(gamePiece.getY() + 1);
+                pieceOnGround = true;
+                stepsPieceOnGround = 0;
+            }
+        }
+
+        fallSteps++;
+    }
+
+    public void runStepGame() {
+        Tetrimino gamePiece = state.getGamePiece();
         int dir;
         int turnDir;
 
-        if ((controls.left && controls.right) || (!controls.left && !controls.right)) {
+        boolean left = controls.left || controls.leftTap;
+        boolean right = controls.right || controls.rightTap;
+        controls.leftTap = false;
+        controls.rightTap = false;
+        if ((left && right) || (!left && !right)) {
             dir = 0;
-        } else if (controls.left) {
+        } else if (left) {
             dir = -1;
         } else {
             dir = 1;
@@ -133,7 +179,7 @@ public class GameEngine {
             turnDirFramesHeld = 0;
         }
 
-        if (dirFramesHeld > 7 || dirFramesHeld % 3 == 0) {
+        if (dirFramesHeld > 1 || dirFramesHeld == 0) {
             if (dir == -1) {
                 gamePiece.setX(gamePiece.getX() - 1);
                 if (!state.isValidTilePos()) {
@@ -146,17 +192,18 @@ public class GameEngine {
                 }
             }
         }
-        if (state.getGameTicks() % 20 == 0 || controls.down) {
-            gamePiece.setY(gamePiece.getY() - 1);
-            if (!state.isValidTilePos()) {
-                gamePiece.setY(gamePiece.getY() + 1);
-                if (state.getGameTicks() % 20 == 0) {
-                    clearPiece();
-                }
-            }
-        }
 
-        state.setGameTicks(gameTicks + 1);
+        if (pieceOnGround && stepsPieceOnGround > 4) {
+            clearPiece();
+        }
+        if (pieceOnGround) {
+            stepsPieceOnGround++;
+        }
+    }
+
+    private void updateGameSpeed() {
+        int level = state.getGameLevel();
+        state.setGameSpeed(Math.pow(0.8 - (level - 1) * 0.007, level - 1) / PIECE_FALL_STEPS);
     }
 
     private void clearPiece() {
@@ -170,6 +217,7 @@ public class GameEngine {
     private void respawnPiece() {
         state.setGamePiece(getNewPiece());
         resetPiecePosition(state.getGamePiece());
+        pieceOnGround = false;
     }
 
     private Tetrimino getNewPiece() {
@@ -210,6 +258,11 @@ public class GameEngine {
             }
             tiles[state.getBoardHeight() - 1] = new Tile[state.getBoardWidth()];
             offset--;
+        }
+        state.setLinesCleared(state.getLinesCleared() + rows.size());
+        if (state.getLinesCleared() / 10 + 1 > state.getGameLevel()) {
+            state.setGameLevel(state.getLinesCleared() / 10 + 1);
+            updateGameSpeed();
         }
     }
 

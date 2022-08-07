@@ -13,6 +13,8 @@ public class Controls {
 
     public boolean left = false;
     public boolean right = false;
+    public boolean leftTap = false;
+    public boolean rightTap = false;
     public boolean up = false;
     public boolean down = false;
     public boolean turnRight = false;
@@ -32,10 +34,12 @@ public class Controls {
             case GLFW_KEY_A:
             case GLFW_KEY_LEFT:
                 left = value;
+                leftTap = leftTap || left;
                 break;
             case GLFW_KEY_D:
             case GLFW_KEY_RIGHT:
                 right = value;
+                rightTap = rightTap || right;
                 break;
             case GLFW_KEY_W:
             case GLFW_KEY_UP:
@@ -82,9 +86,11 @@ public class Controls {
 
         if (isGamepadButtonUpdated(state, GLFW_GAMEPAD_BUTTON_DPAD_LEFT)) {
             left = isGamepadButtonPressed(state, GLFW_GAMEPAD_BUTTON_DPAD_LEFT);
+            leftTap = leftTap || left;
         }
         if (isGamepadButtonUpdated(state, GLFW_GAMEPAD_BUTTON_DPAD_RIGHT)) {
             right = isGamepadButtonPressed(state, GLFW_GAMEPAD_BUTTON_DPAD_RIGHT);
+            rightTap = rightTap || right;
         }
         if (isGamepadButtonUpdated(state, GLFW_GAMEPAD_BUTTON_DPAD_UP)) {
             up = isGamepadButtonPressed(state, GLFW_GAMEPAD_BUTTON_DPAD_UP);

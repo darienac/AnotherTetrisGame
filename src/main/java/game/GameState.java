@@ -31,6 +31,7 @@ public class GameState {
     private int gameTicks;
     private int gameScore;
     private int gameLevel;
+    private int linesCleared;
 
     public GameState() {
         setMode(Mode.GAME);
@@ -74,10 +75,10 @@ public class GameState {
 
                 solidTiles = new Tile[GAME_HEIGHT][GAME_WIDTH];
 
-                gameSpeed = 0.05;
                 gameTicks = 0;
                 gameScore = 0;
                 gameLevel = 1;
+                linesCleared = 0;
                 break;
         }
     }
@@ -160,6 +161,14 @@ public class GameState {
 
     public void setGameLevel(int gameLevel) {
         this.gameLevel = gameLevel;
+    }
+
+    public int getLinesCleared() {
+        return linesCleared;
+    }
+
+    public void setLinesCleared(int linesCleared) {
+        this.linesCleared = linesCleared;
     }
 
     public Tile[][] getDrawnTiles(int width, int height, boolean runSafe, boolean includeExtras) {
