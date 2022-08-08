@@ -18,7 +18,7 @@ import java.util.Set;
  * Runs independent of a consistent time interval, grabs time from GLFW.glfwGetTime()
  */
 public class GameEngine {
-    private static final int PIECE_FALL_STEPS = 20;
+    private static final int PIECE_FALL_STEPS = 1;
     private static final double GAME_SPEED = 0.1;
 
     private GameState state;
@@ -35,7 +35,7 @@ public class GameEngine {
     private int dirLast;
     private int turnDirLast;
     private boolean pieceOnGround;
-    private int stepsPieceOnGround = 0;
+    private int stepsPieceOnGround;
 
     public GameEngine(GameState state, Scene scene, GameWindow window) {
         controls = new Controls();
@@ -46,6 +46,7 @@ public class GameEngine {
         turnDirLast = 0;
         fallSteps = 0;
         gameSteps = 0;
+        stepsPieceOnGround = 0;
 
         GLFW.glfwSetKeyCallback(window.getWindowId(), new GLFWKeyCallback() {
             @Override
@@ -97,6 +98,7 @@ public class GameEngine {
             }
         }
         // TODO: Make some sort of prevention for infinite rotations in place
+        // TODO: Known bugs: lag when holding down, piece doesn't settle unless hard dropped
         if (controls.up) {
             controls.up = false;
             gamePiece.setY(state.getPieceLowestPos());
@@ -131,17 +133,16 @@ public class GameEngine {
     public void runStepFall() {
         Tetrimino gamePiece = state.getGamePiece();
 
-        if (fallSteps % PIECE_FALL_STEPS == 0 || controls.down) {
-            gamePiece.setY(gamePiece.getY() - 1);
+        gamePiece.setY(gamePiece.getY() - 1);
+        if (state.isValidTilePos()) {
             pieceOnGround = false;
-            if (!state.isValidTilePos()) {
-                gamePiece.setY(gamePiece.getY() + 1);
+        } else {
+            gamePiece.setY(gamePiece.getY() + 1);
+            if (!pieceOnGround) {
                 pieceOnGround = true;
                 stepsPieceOnGround = 0;
             }
         }
-
-        fallSteps++;
     }
 
     public void runStepGame() {
@@ -182,13 +183,40 @@ public class GameEngine {
         if (dirFramesHeld > 1 || dirFramesHeld == 0) {
             if (dir == -1) {
                 gamePiece.setX(gamePiece.getX() - 1);
-                if (!state.isValidTilePos()) {
+                if (state.isValidTilePos()) {
+                    if (pieceOnGround) {
+                        gamePiece.setY(gamePiece.getY() - 1);
+                        if (state.isValidTilePos()) {
+                            pieceOnGround = false;
+                        }
+                        gamePiece.setY(gamePiece.getY() + 1);
+                    }
+                } else {
                     gamePiece.setX(gamePiece.getX() + 1);
                 }
             } else if (dir == 1) {
                 gamePiece.setX(gamePiece.getX() + 1);
-                if (!state.isValidTilePos()) {
+                if (state.isValidTilePos()) {
+                    gamePiece.setY(gamePiece.getY() - 1);
+                    if (state.isValidTilePos()) {
+                        pieceOnGround = false;
+                    }
+                    gamePiece.setY(gamePiece.getY() + 1);
+                } else {
                     gamePiece.setX(gamePiece.getX() - 1);
+                }
+            }
+        }
+
+        if (controls.down) {
+            gamePiece.setY(gamePiece.getY() - 1);
+            if (!state.isValidTilePos()) {
+                gamePiece.setY(gamePiece.getY() + 1);
+                if (pieceOnGround) {
+                    clearPiece();
+                } else {
+                    pieceOnGround = true;
+                    stepsPieceOnGround = 0;
                 }
             }
         }
