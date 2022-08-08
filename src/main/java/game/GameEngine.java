@@ -18,7 +18,7 @@ import java.util.Set;
  * Runs independent of a consistent time interval, grabs time from GLFW.glfwGetTime()
  */
 public class GameEngine {
-    private static final int PIECE_FALL_STEPS = 1;
+    private static final int MOVE_RESET_LIMIT = 15;
     private static final double GAME_SPEED = 0.1;
 
     private GameState state;
@@ -36,6 +36,7 @@ public class GameEngine {
     private int turnDirLast;
     private boolean pieceOnGround;
     private int stepsPieceOnGround;
+    private int moveResetCount;
 
     public GameEngine(GameState state, Scene scene, GameWindow window) {
         controls = new Controls();
@@ -47,6 +48,7 @@ public class GameEngine {
         fallSteps = 0;
         gameSteps = 0;
         stepsPieceOnGround = 0;
+        moveResetCount = 0;
 
         GLFW.glfwSetKeyCallback(window.getWindowId(), new GLFWKeyCallback() {
             @Override
@@ -78,9 +80,13 @@ public class GameEngine {
             controls.turnLeft = false;
             gamePiece.setRotation(gamePiece.getRotation() - 1);
             if (tryWallKicks(-1)) {
-                if (gamePiece.getId() != 3) {
-                    pieceOnGround = false;
+                if (pieceOnGround && moveResetCount < MOVE_RESET_LIMIT) {
+                    moveResetCount++;
+                    stepsPieceOnGround = 0;
                 }
+                gamePiece.setY(gamePiece.getY() - 1);
+                pieceOnGround = !state.isValidTilePos();
+                gamePiece.setY(gamePiece.getY() + 1);
             } else {
                 gamePiece.setRotation(gamePiece.getRotation() + 1);
             }
@@ -89,16 +95,17 @@ public class GameEngine {
             controls.turnRight = false;
             gamePiece.setRotation(gamePiece.getRotation() + 1);
             if (tryWallKicks(1)) {
-                if (gamePiece.getId() != 3) {
-                    pieceOnGround = false;
+                if (pieceOnGround && moveResetCount < MOVE_RESET_LIMIT) {
+                    moveResetCount++;
+                    stepsPieceOnGround = 0;
                 }
+                gamePiece.setY(gamePiece.getY() - 1);
+                pieceOnGround = !state.isValidTilePos();
+                gamePiece.setY(gamePiece.getY() + 1);
             } else {
                 gamePiece.setRotation(gamePiece.getRotation() - 1);
-                pieceOnGround = false;
             }
         }
-        // TODO: Make some sort of prevention for infinite rotations in place
-        // TODO: Known bugs: lag when holding down, piece doesn't settle unless hard dropped
         if (controls.up) {
             controls.up = false;
             gamePiece.setY(state.getPieceLowestPos());
@@ -135,13 +142,12 @@ public class GameEngine {
 
         gamePiece.setY(gamePiece.getY() - 1);
         if (state.isValidTilePos()) {
-            pieceOnGround = false;
+            gamePiece.setY(gamePiece.getY() - 1);
+            pieceOnGround = !state.isValidTilePos();
+            gamePiece.setY(gamePiece.getY() + 1);
         } else {
             gamePiece.setY(gamePiece.getY() + 1);
-            if (!pieceOnGround) {
-                pieceOnGround = true;
-                stepsPieceOnGround = 0;
-            }
+            pieceOnGround = true;
         }
     }
 
@@ -154,6 +160,14 @@ public class GameEngine {
         boolean right = controls.right || controls.rightTap;
         controls.leftTap = false;
         controls.rightTap = false;
+
+        gamePiece.setY(gamePiece.getY() - 1);
+        pieceOnGround = !state.isValidTilePos();
+        gamePiece.setY(gamePiece.getY() + 1);
+        if (!pieceOnGround) {
+            stepsPieceOnGround = 0;
+        }
+
         if ((left && right) || (!left && !right)) {
             dir = 0;
         } else if (left) {
@@ -188,6 +202,9 @@ public class GameEngine {
                         gamePiece.setY(gamePiece.getY() - 1);
                         if (state.isValidTilePos()) {
                             pieceOnGround = false;
+                        } else if (moveResetCount < MOVE_RESET_LIMIT) {
+                            pieceOnGround = false;
+                            moveResetCount++;
                         }
                         gamePiece.setY(gamePiece.getY() + 1);
                     }
@@ -197,11 +214,16 @@ public class GameEngine {
             } else if (dir == 1) {
                 gamePiece.setX(gamePiece.getX() + 1);
                 if (state.isValidTilePos()) {
-                    gamePiece.setY(gamePiece.getY() - 1);
-                    if (state.isValidTilePos()) {
-                        pieceOnGround = false;
+                    if (pieceOnGround) {
+                        gamePiece.setY(gamePiece.getY() - 1);
+                        if (state.isValidTilePos()) {
+                            pieceOnGround = false;
+                        } else if (moveResetCount < MOVE_RESET_LIMIT) {
+                            pieceOnGround = false;
+                            moveResetCount++;
+                        }
+                        gamePiece.setY(gamePiece.getY() + 1);
                     }
-                    gamePiece.setY(gamePiece.getY() + 1);
                 } else {
                     gamePiece.setX(gamePiece.getX() - 1);
                 }
@@ -221,7 +243,7 @@ public class GameEngine {
             }
         }
 
-        if (pieceOnGround && stepsPieceOnGround > 4) {
+        if (pieceOnGround && (stepsPieceOnGround > 4 || moveResetCount >= MOVE_RESET_LIMIT)) {
             clearPiece();
         }
         if (pieceOnGround) {
@@ -231,7 +253,7 @@ public class GameEngine {
 
     private void updateGameSpeed() {
         int level = state.getGameLevel();
-        state.setGameSpeed(Math.pow(0.8 - (level - 1) * 0.007, level - 1) / PIECE_FALL_STEPS);
+        state.setGameSpeed(Math.pow(0.8 - (level - 1) * 0.007, level - 1));
     }
 
     private void clearPiece() {
@@ -246,6 +268,7 @@ public class GameEngine {
         state.setGamePiece(getNewPiece());
         resetPiecePosition(state.getGamePiece());
         pieceOnGround = false;
+        moveResetCount = 0;
     }
 
     private Tetrimino getNewPiece() {
