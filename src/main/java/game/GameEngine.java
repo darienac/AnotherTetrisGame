@@ -19,7 +19,7 @@ import java.util.Set;
  */
 public class GameEngine {
     private static final int MOVE_RESET_LIMIT = 15;
-    private static final double GAME_SPEED = 0.1;
+    private static final double GAME_SPEED = 0.05;
 
     private GameState state;
     private Scene scene;
@@ -108,6 +108,7 @@ public class GameEngine {
         }
         if (controls.up) {
             controls.up = false;
+            state.setGameScore(state.getGameScore() + Math.max(gamePiece.getY() - state.getPieceLowestPos(), 0) * 2);
             gamePiece.setY(state.getPieceLowestPos());
             clearPiece();
         }
@@ -194,7 +195,7 @@ public class GameEngine {
             turnDirFramesHeld = 0;
         }
 
-        if (dirFramesHeld > 1 || dirFramesHeld == 0) {
+        if (dirFramesHeld > 5 || dirFramesHeld == 0) {
             if (dir == -1) {
                 gamePiece.setX(gamePiece.getX() - 1);
                 if (state.isValidTilePos()) {
@@ -232,7 +233,9 @@ public class GameEngine {
 
         if (controls.down) {
             gamePiece.setY(gamePiece.getY() - 1);
-            if (!state.isValidTilePos()) {
+            if (state.isValidTilePos()) {
+                state.setGameScore(state.getGameScore() + 1);
+            } else {
                 gamePiece.setY(gamePiece.getY() + 1);
                 if (pieceOnGround) {
                     clearPiece();
@@ -434,3 +437,19 @@ public class GameEngine {
         return false;
     }
 }
+
+// TODO: Score stuff:
+//  Single/Mini T-Spin		                        100×level
+//  Mini T-Spin Single		                        200×level
+//  Double		                                    300×level
+//  T-Spin/Mini T-Spin Double		                400×level
+//  Triple		                                    500×level
+//  B2B Mini T-Spin Double		                    600×level
+//  Tetris/T-Spin Single		                    800×level
+//  B2B T-Spin Single/B2B Tetris/T-Spin Double		1,200×level
+//  T-Spin Triple		                            1,600×level
+//  B2B T-Spin Double		                        1,800×level
+//  B2B T-Spin Triple		                        2,400×level
+//  Combo		                                    (move value+50)×level
+//  Soft drop		                                1 point per cell        Done
+//  Hard drop		                                2 points per cell       Done

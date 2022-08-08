@@ -103,8 +103,8 @@ public class GameRenderer {
 
             if (state.getBgOption() == 1) {
                 bgRenderer.render(window);
-                gameScene.getAmbientLightColor().set(new Vector3f(0.15f, 0.075f, 0.5f));
-                gameScene.getLightSource().setColor(new Vector3f(1.0f, 0.8f, 1.6f));
+                gameScene.getAmbientLightColor().set(new Vector3f(0.3f, 0.15f, 1.0f));
+                gameScene.getLightSource().setColor(new Vector3f(1.4f, 1.2f, 1.6f));
             }
 
             gameScoreDisplay.renderCount(state.getGameScore());
