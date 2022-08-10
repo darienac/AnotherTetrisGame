@@ -14,6 +14,7 @@ public enum Tile {
     WALL_J,
     LABEL_SCORE,
     LABEL_LEVEL,
+    LABEL_X,
     DIGIT_0,
     DIGIT_1,
     DIGIT_2,

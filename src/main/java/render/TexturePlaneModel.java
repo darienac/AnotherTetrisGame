@@ -7,7 +7,7 @@ public class TexturePlaneModel extends Model {
         super();
         Mesh mesh = new PlaneMesh(width, height, tx0, ty0, tx1, ty1);
 
-        Vector4f ambient = new Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
+        Vector4f ambient = new Vector4f(0.0f, 0.0f, 0.0f, 1.0f);
         Vector4f diffuse = new Vector4f(0.0f, 0.0f, 0.0f, 1.0f);
         Vector4f specular = new Vector4f(0.0f, 0.0f, 0.0f, 1.0f);
         Vector4f emissive = new Vector4f(1.0f, 1.0f, 1.0f, 1.0f);

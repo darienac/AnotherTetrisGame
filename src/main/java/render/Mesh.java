@@ -4,6 +4,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.assimp.AIFace;
 import org.lwjgl.assimp.AIMesh;
 import org.lwjgl.assimp.AIVector3D;
+import org.lwjgl.glfw.GLFW;
 import shaders.ShaderProgram3D;
 
 import java.nio.IntBuffer;
@@ -77,12 +78,18 @@ public class Mesh {
         }
 
         // Setup attribute values here
-        glBindBuffer(GL_ARRAY_BUFFER, vertexArrayBuffer);
-        glVertexAttribPointer(shaderProgram3D.aVertex, 3, GL_FLOAT, false, 0, 0);
-        glBindBuffer(GL_ARRAY_BUFFER, normalArrayBuffer);
-        glVertexAttribPointer(shaderProgram3D.aNormal, 3, GL_FLOAT, false, 0, 0);
-        glBindBuffer(GL_ARRAY_BUFFER, texCoordArrayBuffer);
-        glVertexAttribPointer(shaderProgram3D.aTexCoord, 3, GL_FLOAT, false, 0, 0);
+        if (shaderProgram3D.aVertex != -1) {
+            glBindBuffer(GL_ARRAY_BUFFER, vertexArrayBuffer);
+            glVertexAttribPointer(shaderProgram3D.aVertex, 3, GL_FLOAT, false, 0, 0);
+        }
+        if (shaderProgram3D.aNormal != -1) {
+            glBindBuffer(GL_ARRAY_BUFFER, normalArrayBuffer);
+            glVertexAttribPointer(shaderProgram3D.aNormal, 3, GL_FLOAT, false, 0, 0);
+        }
+        if (shaderProgram3D.aTexCoord != -1) {
+            glBindBuffer(GL_ARRAY_BUFFER, texCoordArrayBuffer);
+            glVertexAttribPointer(shaderProgram3D.aTexCoord, 3, GL_FLOAT, false, 0, 0);
+        }
 
         // Setup uniform values here
         glUniform1i(shaderProgram3D.textureDiffuse, 0);
@@ -108,6 +115,7 @@ public class Mesh {
         glUniform3fv(shaderProgram3D.uEmissiveColor, material.getEmissiveColor().get(shaderProgram3D.emissiveColorBuffer));
 
         glUniform1f(shaderProgram3D.uOpacity, material.getOpacity());
+        glUniform1f(shaderProgram3D.uTime, (float) GLFW.glfwGetTime());
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementArrayBuffer);
         glDrawElements(GL_TRIANGLES, elementCount, GL_UNSIGNED_INT, 0);

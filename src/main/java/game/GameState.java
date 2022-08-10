@@ -2,6 +2,7 @@ package game;
 
 import model.Tetrimino;
 import model.Tile;
+import render.LineClearMessage;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -32,6 +33,8 @@ public class GameState {
     private int gameScore;
     private int gameLevel;
     private int linesCleared;
+    private boolean pieceOnGround;
+    private LinkedList<LineClearMessage.Message> lineClearMessages;
 
     public GameState() {
         setMode(Mode.GAME);
@@ -79,6 +82,8 @@ public class GameState {
                 gameScore = 0;
                 gameLevel = 1;
                 linesCleared = 0;
+                pieceOnGround = false;
+                lineClearMessages = new LinkedList<>();
                 break;
         }
     }
@@ -169,6 +174,22 @@ public class GameState {
 
     public void setLinesCleared(int linesCleared) {
         this.linesCleared = linesCleared;
+    }
+
+    public boolean isPieceOnGround() {
+        return pieceOnGround;
+    }
+
+    public void setPieceOnGround(boolean pieceOnGround) {
+        this.pieceOnGround = pieceOnGround;
+    }
+
+    public LinkedList<LineClearMessage.Message> getLineClearMessages() {
+        return lineClearMessages;
+    }
+
+    public void setLineClearMessages(LinkedList<LineClearMessage.Message> lineClearMessages) {
+        this.lineClearMessages = lineClearMessages;
     }
 
     public Tile[][] getDrawnTiles(int width, int height, boolean runSafe, boolean includeExtras) {

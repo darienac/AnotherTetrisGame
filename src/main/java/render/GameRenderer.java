@@ -12,6 +12,8 @@ import shaders.ShaderProgram3D;
 import shaders.ShaderProgramBG;
 import startup.GameWindow;
 
+import java.util.LinkedList;
+
 import static org.lwjgl.opengl.GL30.*;
 
 /**
@@ -21,7 +23,11 @@ public class GameRenderer {
     private final GameState state;
     private final GameWindow window;
     private final Scene gameScene;
+    private final Scene rainbowScene;
+
     private final ShaderProgram3D shaderProgram3D;
+    private final ShaderProgram3D rainbowShader;
+
     private final TileDrawer tetrisBoard;
 
     private final Model testImg;
@@ -38,6 +44,7 @@ public class GameRenderer {
     private final BGRenderer bgRenderer;
     private ScoreDisplay gameScoreDisplay;
     private ScoreDisplay gameLevelDisplay;
+    private LineClearMessage lineClearMessage;
 
     public GameRenderer(GameState state, GameWindow window) throws Exception {
         this.state = state;
@@ -50,9 +57,20 @@ public class GameRenderer {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         shaderProgram3D = new ShaderProgram3D();
+        shaderProgram3D.createVertexShader("vertex3d.glsl");
+        shaderProgram3D.createFragmentShader("fragment3d.glsl");
+        shaderProgram3D.link();
         gameScene = new Scene(window, shaderProgram3D);
         gameScene.getCamera().setPosition(new Vector3f(0.0f, 2.0f, 10.0f));
         gameScene.getLightSource().setPosition(new Vector3f(0.0f, 0.0f, 5.0f));
+
+        rainbowShader = new ShaderProgram3D();
+        rainbowShader.createVertexShader("vertex3d.glsl");
+        rainbowShader.createFragmentShader("fragment3dRainbow.glsl");
+        rainbowShader.link();
+        rainbowScene = new Scene(window, rainbowShader);
+        rainbowScene.setCamera(gameScene.getCamera());
+        rainbowScene.setLightSource(gameScene.getLightSource());
 
         tetrisBoard = new TileDrawer(gameScene, new Vector3f(0.0f, 0.0f, 0.0f), 0.25f, 12, 22);
 
@@ -74,7 +92,14 @@ public class GameRenderer {
         pieceDrawer4x4 = new TileDrawer(gameScene, new Vector3f(0.0f, 0.0f, 0.0f), 0.2f, 4, 4);
 
         gameScoreDisplay = new ScoreDisplay(gameScene, new Vector3f(0.0f, 3.0f, 0.0f), 0.15f, Tile.LABEL_SCORE, 6, 8);
-        gameLevelDisplay = new ScoreDisplay(gameScene, new Vector3f(-2.25f, 0.0f, 0.0f), 0.15f, Tile.LABEL_LEVEL, 6, 2);
+        gameLevelDisplay = new ScoreDisplay(gameScene, new Vector3f(-2.25f, 1.2f, 0.0f), 0.15f, Tile.LABEL_LEVEL, 6, 2);
+
+        lineClearMessage = new LineClearMessage(rainbowScene, -2.25f, 0.0f);
+        LinkedList<LineClearMessage.Message> messages = new LinkedList<>();
+        messages.add(LineClearMessage.Message.DOUBLE);
+        messages.add(LineClearMessage.Message.COMBO);
+        lineClearMessage.setMessages(messages);
+        lineClearMessage.setComboAmount(2);
 
         ShaderProgramBG bgShader = new ShaderProgramBG();
         bgShader.createFragmentShader("fragmentBG1.glsl");
@@ -126,6 +151,8 @@ public class GameRenderer {
                     tetrisBoard.render(tiles[y][x], x + 1, y + 1);
                 }
             }
+
+            lineClearMessage.render();
         }
     }
 

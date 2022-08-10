@@ -8,6 +8,7 @@ import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWJoystickCallback;
 import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWKeyCallbackI;
+import render.LineClearMessage;
 import render.Scene;
 import startup.GameWindow;
 
@@ -34,9 +35,10 @@ public class GameEngine {
     private int turnDirFramesHeld;
     private int dirLast;
     private int turnDirLast;
-    private boolean pieceOnGround;
     private int stepsPieceOnGround;
     private int moveResetCount;
+    private boolean lastMoveIsRotate;
+    private int lastSrsNum;
 
     public GameEngine(GameState state, Scene scene, GameWindow window) {
         controls = new Controls();
@@ -49,6 +51,8 @@ public class GameEngine {
         gameSteps = 0;
         stepsPieceOnGround = 0;
         moveResetCount = 0;
+        lastMoveIsRotate = false;
+        lastSrsNum = -1;
 
         GLFW.glfwSetKeyCallback(window.getWindowId(), new GLFWKeyCallback() {
             @Override
@@ -80,13 +84,14 @@ public class GameEngine {
             controls.turnLeft = false;
             gamePiece.setRotation(gamePiece.getRotation() - 1);
             if (tryWallKicks(-1)) {
-                if (pieceOnGround && moveResetCount < MOVE_RESET_LIMIT) {
+                if (state.isPieceOnGround() && moveResetCount < MOVE_RESET_LIMIT) {
                     moveResetCount++;
                     stepsPieceOnGround = 0;
                 }
                 gamePiece.setY(gamePiece.getY() - 1);
-                pieceOnGround = !state.isValidTilePos();
+                state.setPieceOnGround(!state.isValidTilePos());
                 gamePiece.setY(gamePiece.getY() + 1);
+                lastMoveIsRotate = true;
             } else {
                 gamePiece.setRotation(gamePiece.getRotation() + 1);
             }
@@ -95,18 +100,20 @@ public class GameEngine {
             controls.turnRight = false;
             gamePiece.setRotation(gamePiece.getRotation() + 1);
             if (tryWallKicks(1)) {
-                if (pieceOnGround && moveResetCount < MOVE_RESET_LIMIT) {
+                if (state.isPieceOnGround() && moveResetCount < MOVE_RESET_LIMIT) {
                     moveResetCount++;
                     stepsPieceOnGround = 0;
                 }
                 gamePiece.setY(gamePiece.getY() - 1);
-                pieceOnGround = !state.isValidTilePos();
+                state.setPieceOnGround(!state.isValidTilePos());
                 gamePiece.setY(gamePiece.getY() + 1);
+                lastMoveIsRotate = true;
             } else {
                 gamePiece.setRotation(gamePiece.getRotation() - 1);
             }
         }
         if (controls.up) {
+            lastMoveIsRotate = false;
             controls.up = false;
             state.setGameScore(state.getGameScore() + Math.max(gamePiece.getY() - state.getPieceLowestPos(), 0) * 2);
             gamePiece.setY(state.getPieceLowestPos());
@@ -143,12 +150,13 @@ public class GameEngine {
 
         gamePiece.setY(gamePiece.getY() - 1);
         if (state.isValidTilePos()) {
+            lastMoveIsRotate = false;
             gamePiece.setY(gamePiece.getY() - 1);
-            pieceOnGround = !state.isValidTilePos();
+            state.setPieceOnGround(!state.isValidTilePos());
             gamePiece.setY(gamePiece.getY() + 1);
         } else {
             gamePiece.setY(gamePiece.getY() + 1);
-            pieceOnGround = true;
+            state.setPieceOnGround(true);
         }
     }
 
@@ -162,12 +170,12 @@ public class GameEngine {
         controls.leftTap = false;
         controls.rightTap = false;
 
-        gamePiece.setY(gamePiece.getY() - 1);
-        pieceOnGround = !state.isValidTilePos();
-        gamePiece.setY(gamePiece.getY() + 1);
-        if (!pieceOnGround) {
+        if (!state.isPieceOnGround()) {
             stepsPieceOnGround = 0;
         }
+        gamePiece.setY(gamePiece.getY() - 1);
+        state.setPieceOnGround(!state.isValidTilePos());
+        gamePiece.setY(gamePiece.getY() + 1);
 
         if ((left && right) || (!left && !right)) {
             dir = 0;
@@ -195,16 +203,17 @@ public class GameEngine {
             turnDirFramesHeld = 0;
         }
 
-        if (dirFramesHeld > 5 || dirFramesHeld == 0) {
+        if (dirFramesHeld > 3 || dirFramesHeld == 0) {
             if (dir == -1) {
                 gamePiece.setX(gamePiece.getX() - 1);
                 if (state.isValidTilePos()) {
-                    if (pieceOnGround) {
+                    lastMoveIsRotate = false;
+                    if (state.isPieceOnGround()) {
                         gamePiece.setY(gamePiece.getY() - 1);
                         if (state.isValidTilePos()) {
-                            pieceOnGround = false;
+                            state.setPieceOnGround(false);
                         } else if (moveResetCount < MOVE_RESET_LIMIT) {
-                            pieceOnGround = false;
+                            state.setPieceOnGround(false);
                             moveResetCount++;
                         }
                         gamePiece.setY(gamePiece.getY() + 1);
@@ -215,12 +224,13 @@ public class GameEngine {
             } else if (dir == 1) {
                 gamePiece.setX(gamePiece.getX() + 1);
                 if (state.isValidTilePos()) {
-                    if (pieceOnGround) {
+                    lastMoveIsRotate = false;
+                    if (state.isPieceOnGround()) {
                         gamePiece.setY(gamePiece.getY() - 1);
                         if (state.isValidTilePos()) {
-                            pieceOnGround = false;
+                            state.setPieceOnGround(false);
                         } else if (moveResetCount < MOVE_RESET_LIMIT) {
-                            pieceOnGround = false;
+                            state.setPieceOnGround(false);
                             moveResetCount++;
                         }
                         gamePiece.setY(gamePiece.getY() + 1);
@@ -234,22 +244,23 @@ public class GameEngine {
         if (controls.down) {
             gamePiece.setY(gamePiece.getY() - 1);
             if (state.isValidTilePos()) {
+                lastMoveIsRotate = false;
                 state.setGameScore(state.getGameScore() + 1);
             } else {
                 gamePiece.setY(gamePiece.getY() + 1);
-                if (pieceOnGround) {
+                if (state.isPieceOnGround()) {
                     clearPiece();
                 } else {
-                    pieceOnGround = true;
+                    state.setPieceOnGround(true);
                     stepsPieceOnGround = 0;
                 }
             }
         }
 
-        if (pieceOnGround && (stepsPieceOnGround > 4 || moveResetCount >= MOVE_RESET_LIMIT)) {
+        if (state.isPieceOnGround() && (stepsPieceOnGround > 10 || moveResetCount >= MOVE_RESET_LIMIT)) {
             clearPiece();
         }
-        if (pieceOnGround) {
+        if (state.isPieceOnGround()) {
             stepsPieceOnGround++;
         }
     }
@@ -260,8 +271,25 @@ public class GameEngine {
     }
 
     private void clearPiece() {
+        state.getLineClearMessages().clear();
+        checkTSpins();
         state.setSolidTiles(state.getDrawnTiles(state.getBoardWidth(), state.getBoardHeight(), true, false));
         Set<Integer> rows = findRows();
+        switch (rows.size()) {
+            case 1:
+                state.getLineClearMessages().add(LineClearMessage.Message.SINGLE);
+                break;
+            case 2:
+                state.getLineClearMessages().add(LineClearMessage.Message.DOUBLE);
+                break;
+            case 3:
+                state.getLineClearMessages().add(LineClearMessage.Message.TRIPLE);
+                break;
+            case 4:
+                state.getLineClearMessages().add(LineClearMessage.Message.TETRIS);
+                break;
+        }
+        // TODO: Somehow trigger the LineClearMessage object to change it's message and update the timer
         clearRows(rows);
         respawnPiece();
         state.setAllowHold(true);
@@ -270,8 +298,9 @@ public class GameEngine {
     private void respawnPiece() {
         state.setGamePiece(getNewPiece());
         resetPiecePosition(state.getGamePiece());
-        pieceOnGround = false;
+        state.setPieceOnGround(false);
         moveResetCount = 0;
+        lastMoveIsRotate = false;
     }
 
     private Tetrimino getNewPiece() {
@@ -323,109 +352,111 @@ public class GameEngine {
     private boolean tryWallKicks(int turnedDir) {
         Tetrimino gamePiece = state.getGamePiece();
         if (state.isValidTilePos()) {
+            lastSrsNum = -1;
             return true;
         }
         if (gamePiece.getId() == 0) {
             if (turnedDir == 1) {
                 switch (gamePiece.getRotation()) {
                     case 1:
-                        return tryWallKick(-2, 0)
-                                || tryWallKick(1, 0)
-                                || tryWallKick(-2, -1)
-                                || tryWallKick(1, 2);
+                        return tryWallKick(-2, 0, 0)
+                                || tryWallKick(1, 0, 1)
+                                || tryWallKick(-2, -1, 2)
+                                || tryWallKick(1, 2, 3);
                     case 2:
-                        return tryWallKick(-1, 0)
-                                || tryWallKick(2, 0)
-                                || tryWallKick(-1, 2)
-                                || tryWallKick(2, -1);
+                        return tryWallKick(-1, 0, 0)
+                                || tryWallKick(2, 0, 1)
+                                || tryWallKick(-1, 2, 2)
+                                || tryWallKick(2, -1, 3);
                     case 3:
-                        return tryWallKick(2, 0)
-                                || tryWallKick(-1, 0)
-                                || tryWallKick(2, 1)
-                                || tryWallKick(-1, -2);
+                        return tryWallKick(2, 0, 0)
+                                || tryWallKick(-1, 0, 1)
+                                || tryWallKick(2, 1, 2)
+                                || tryWallKick(-1, -2, 3);
                     case 0:
-                        return tryWallKick(1, 0)
-                                || tryWallKick(-2, 0)
-                                || tryWallKick(1, -2)
-                                || tryWallKick(-2, 1);
+                        return tryWallKick(1, 0, 0)
+                                || tryWallKick(-2, 0, 1)
+                                || tryWallKick(1, -2, 2)
+                                || tryWallKick(-2, 1, 3);
                 }
             } else if (turnedDir == -1) {
                 switch (gamePiece.getRotation()) {
                     case 0:
-                        return tryWallKick(2, 0)
-                                || tryWallKick(-1, 0)
-                                || tryWallKick(2, 1)
-                                || tryWallKick(-1, -2);
+                        return tryWallKick(2, 0, 0)
+                                || tryWallKick(-1, 0, 1)
+                                || tryWallKick(2, 1, 2)
+                                || tryWallKick(-1, -2, 3);
                     case 1:
-                        return tryWallKick(1, 0)
-                                || tryWallKick(-2, 0)
-                                || tryWallKick(1, -2)
-                                || tryWallKick(-2, 1);
+                        return tryWallKick(1, 0, 0)
+                                || tryWallKick(-2, 0, 1)
+                                || tryWallKick(1, -2, 2)
+                                || tryWallKick(-2, 1, 3);
                     case 2:
-                        return tryWallKick(-2, 0)
-                                || tryWallKick(1, 0)
-                                || tryWallKick(-2, -1)
-                                || tryWallKick(1, 2);
+                        return tryWallKick(-2, 0, 0)
+                                || tryWallKick(1, 0, 1)
+                                || tryWallKick(-2, -1, 2)
+                                || tryWallKick(1, 2, 3);
                     case 3:
-                        return tryWallKick(-1, 0)
-                                || tryWallKick(2, 0)
-                                || tryWallKick(-1, 2)
-                                || tryWallKick(2, -1);
+                        return tryWallKick(-1, 0, 0)
+                                || tryWallKick(2, 0, 1)
+                                || tryWallKick(-1, 2, 2)
+                                || tryWallKick(2, -1, 3);
                 }
             }
         } else {
             if (turnedDir == 1) {
                 switch (gamePiece.getRotation()) {
                     case 1:
-                        return tryWallKick(-1, 0)
-                                || tryWallKick(-1, 1)
-                                || tryWallKick(0, -2)
-                                || tryWallKick(-1, -2);
+                        return tryWallKick(-1, 0, 0)
+                                || tryWallKick(-1, 1, 1)
+                                || tryWallKick(0, -2, 2)
+                                || tryWallKick(-1, -2, 3);
                     case 2:
-                        return tryWallKick(1, 0)
-                                || tryWallKick(1, -1)
-                                || tryWallKick(0, 2)
-                                || tryWallKick(1, 2);
+                        return tryWallKick(1, 0, 0)
+                                || tryWallKick(1, -1, 1)
+                                || tryWallKick(0, 2, 2)
+                                || tryWallKick(1, 2, 3);
                     case 3:
-                        return tryWallKick(1, 0)
-                                || tryWallKick(1, 1)
-                                || tryWallKick(0, -2)
-                                || tryWallKick(1, -2);
+                        return tryWallKick(1, 0, 0)
+                                || tryWallKick(1, 1, 1)
+                                || tryWallKick(0, -2, 2)
+                                || tryWallKick(1, -2, 3);
                     case 0:
-                        return tryWallKick(-1, 0)
-                                || tryWallKick(-1, -1)
-                                || tryWallKick(0, 2)
-                                || tryWallKick(-1, 2);
+                        return tryWallKick(-1, 0, 0)
+                                || tryWallKick(-1, -1, 1)
+                                || tryWallKick(0, 2, 2)
+                                || tryWallKick(-1, 2, 3);
                 }
             } else if (turnedDir == -1) {
                 switch (gamePiece.getRotation()) {
                     case 0:
-                        return tryWallKick(1, 0)
-                                || tryWallKick(1, -1)
-                                || tryWallKick(0, 2)
-                                || tryWallKick(1, 2);
+                        return tryWallKick(1, 0, 0)
+                                || tryWallKick(1, -1, 1)
+                                || tryWallKick(0, 2, 2)
+                                || tryWallKick(1, 2, 3);
                     case 1:
-                        return tryWallKick(-1, 0)
-                                || tryWallKick(-1, 1)
-                                || tryWallKick(0, -2)
-                                || tryWallKick(-1, -2);
+                        return tryWallKick(-1, 0, 0)
+                                || tryWallKick(-1, 1, 1)
+                                || tryWallKick(0, -2, 2)
+                                || tryWallKick(-1, -2, 3);
                     case 2:
-                        return tryWallKick(-1, 0)
-                                || tryWallKick(-1, -1)
-                                || tryWallKick(0, 2)
-                                || tryWallKick(-1, 2);
+                        return tryWallKick(-1, 0, 0)
+                                || tryWallKick(-1, -1, 1)
+                                || tryWallKick(0, 2, 2)
+                                || tryWallKick(-1, 2, 3);
                     case 3:
-                        return tryWallKick(1, 0)
-                                || tryWallKick(1, 1)
-                                || tryWallKick(0, -2)
-                                || tryWallKick(1, -2);
+                        return tryWallKick(1, 0, 0)
+                                || tryWallKick(1, 1, 1)
+                                || tryWallKick(0, -2, 2)
+                                || tryWallKick(1, -2, 3);
                 }
             }
         }
         return false;
     }
 
-    private boolean tryWallKick(int x, int y) {
+    private boolean tryWallKick(int x, int y, int srsNum) {
+        lastSrsNum = srsNum;
         Tetrimino gamePiece = state.getGamePiece();
         gamePiece.setX(gamePiece.getX() + x);
         gamePiece.setY(gamePiece.getY() + y);
@@ -435,6 +466,69 @@ public class GameEngine {
         gamePiece.setX(gamePiece.getX() - x);
         gamePiece.setY(gamePiece.getY() - y);
         return false;
+    }
+
+    private void checkTSpins() {
+        if (!lastMoveIsRotate) {
+            return;
+        }
+        Tetrimino gamePiece = state.getGamePiece();
+        if (gamePiece.getId() != 5) {
+            return;
+        }
+
+        boolean[] corners = new boolean[4];
+        Tile[][] tiles = state.getSolidTiles();
+        corners[0] = tiles[0][0] != null;
+        corners[1] = tiles[0][3] != null;
+        corners[2] = tiles[3][0] != null;
+        corners[3] = tiles[3][3] != null;
+        int cornerCount = 0;
+        for (int i = 0; i < corners.length; i++) {
+            if (corners[i]) {
+                cornerCount++;
+            }
+        }
+        if (cornerCount < 3) {
+            return;
+        }
+
+        if (cornerCount == 4) {
+            onTSpin();
+            return;
+        }
+
+        if (lastSrsNum == 3) {
+            onTSpin();
+        }
+
+        if (gamePiece.getRotation() == 0 && corners[2] && corners[3]) {
+            onTSpin();
+            return;
+        }
+        if (gamePiece.getRotation() == 1 && corners[1] && corners[3]) {
+            onTSpin();
+            return;
+        }
+        if (gamePiece.getRotation() == 2 && corners[0] && corners[1]) {
+            onTSpin();
+            return;
+        }
+        if (gamePiece.getRotation() == 3 && corners[0] && corners[2]) {
+            onTSpin();
+            return;
+        }
+
+        onMiniTSpin();
+    }
+
+    private void onTSpin() {
+        state.getLineClearMessages().add(LineClearMessage.Message.TSPIN);
+    }
+
+    private void onMiniTSpin() {
+        state.getLineClearMessages().add(LineClearMessage.Message.MINI);
+        state.getLineClearMessages().add(LineClearMessage.Message.TSPIN);
     }
 }
 

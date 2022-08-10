@@ -20,13 +20,13 @@ public class TileDrawer {
 
     private final Scene gameScene;
     private final Vector3f origin;
-    private final float tileSize;
+    private float tileSize;
     private final int columns;
     private final int rows;
 
     private ModelTransform modelTransform;
 
-    public TileDrawer(Scene gameScene, Vector3f origin, float tileSize, int columns, int rows) throws Exception {
+    public TileDrawer(Scene gameScene, Vector3f origin, float tileSize, int columns, int rows) {
         this.gameScene = gameScene;
         this.origin = origin;
         this.tileSize = tileSize;
@@ -107,6 +107,9 @@ public class TileDrawer {
                 model = rs.getLabelLevel();
                 offsetX = 2.5f;
                 break;
+            case LABEL_X:
+                model = rs.getLabelX();
+                break;
             case DIGIT_0:
                 model = rs.getDigits()[0];
                 break;
@@ -147,5 +150,10 @@ public class TileDrawer {
 
     public Vector3f getOrigin() {
         return origin;
+    }
+
+    public void setTileSize(float tileSize) {
+        this.tileSize = tileSize;
+        modelTransform.setScale(tileSize / MODEL_SIZE);
     }
 }

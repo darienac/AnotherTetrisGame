@@ -1,5 +1,8 @@
 package render;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class ResourcesCache {
     private static ResourcesCache resourcesCache = null;
 
@@ -13,7 +16,9 @@ public class ResourcesCache {
     private final Model wallJ;
     private final Model labelScore;
     private final Model labelLevel;
+    private final Model labelX;
     private final Model[] digits;
+    private final Model[] messageModels;
 
     private ResourcesCache() throws Exception {
         metalReflect = new Texture("metalReflection.png");
@@ -30,10 +35,19 @@ public class ResourcesCache {
 
         labelScore = new TexturePlaneModel(new Texture("score.png"), 24.0f, 8.0f);
         labelLevel = new TexturePlaneModel(new Texture("level.png"), 24.0f, 8.0f);
+        labelX = new TexturePlaneModel(new Texture("smallX.png"), 4.0f, 8.0f);
         Texture digitsTexture = new Texture("digits.png");
         digits = new Model[10];
         for (int i = 0; i < 10; i++) {
             digits[i] = new TexturePlaneModel(digitsTexture, 4.0f, 8.0f, i * 0.1f, 0.0f, (i + 1) * 0.1f, 1.0f);
+        }
+
+        Texture messages = new Texture("lineClearMessages.png");
+        messageModels = new Model[8];
+        float messageWidth = 3.0f;
+        float messageHeight = 1.0f;
+        for (int i = 0; i < 8; i++) {
+            messageModels[i] = new TexturePlaneModel(messages, messageWidth, messageHeight, 0.0f, i * 0.125f, 1.0f, (i + 1) * 0.125f);
         }
     }
 
@@ -80,11 +94,15 @@ public class ResourcesCache {
         return labelLevel;
     }
 
+    public Model getLabelX() {
+        return labelX;
+    }
+
     public Model[] getDigits() {
         return digits;
     }
 
-    public ResourcesCache getResourcesCache() {
-        return resourcesCache;
+    public Model[] getMessageModels() {
+        return messageModels;
     }
 }

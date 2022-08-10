@@ -30,11 +30,21 @@ public class ScoreDisplay {
     }
 
     public void renderCount(int amount) throws Exception {
-        tileDrawer.render(labelTile, 0, 0);
+        if (labelTile != null) {
+            tileDrawer.render(labelTile, 0, 0);
+        }
         for (int i = 0; i < numDigits; i++) {
             int digit = amount % 10;
             tileDrawer.render(digits[digit], tileDrawer.getColumns() - 1 - i, 0);
             amount /= 10;
         }
+    }
+
+    public void setTileSize(float tileSize) {
+        tileDrawer.setTileSize(tileSize);
+    }
+
+    public Vector3f getOrigin() {
+        return tileDrawer.getOrigin();
     }
 }
