@@ -69,8 +69,6 @@ public class GameEngine {
         lastSrsNum = -1;
         b2bViable = false;
 
-        state.setGameLevel(16);
-
         GLFW.glfwSetKeyCallback(window.getWindowId(), new GLFWKeyCallback() {
             @Override
             public void invoke(long window, int key, int scancode, int action, int mods) {

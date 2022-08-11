@@ -3,6 +3,7 @@ package shaders;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL20C.glGetUniformLocation;
@@ -91,8 +92,15 @@ public class ShaderProgram implements AutoCloseable {
         }
     }
 
+    // Java 11+ only
+//    private String readResource(String name) throws IOException {
+//        Path filePath = Path.of(SHADER_PATH + name);
+//        return Files.readString(filePath);
+//    }
+
+    // Java 8 compatible
     private String readResource(String name) throws IOException {
-        Path filePath = Path.of(SHADER_PATH + name);
-        return Files.readString(filePath);
+        Path filePath = Paths.get(SHADER_PATH + name);
+        return new String(Files.readAllBytes(filePath));
     }
 }
