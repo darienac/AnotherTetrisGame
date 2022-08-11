@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL20C.glGetUniformLocation;
 
 public class ShaderProgram implements AutoCloseable {
     private static final String SHADER_PATH = "src/main/resources/shaders/";
@@ -75,6 +76,11 @@ public class ShaderProgram implements AutoCloseable {
 
     public int getProgramId() {
         return programId;
+    }
+
+    public void setUniformFloat(String name, float value) {
+        bind();
+        glUniform1f(glGetUniformLocation(getProgramId(), name), value);
     }
 
     @Override

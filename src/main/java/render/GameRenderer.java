@@ -2,6 +2,7 @@ package render;
 
 import game.GameState;
 
+import model.Message;
 import model.Tetrimino;
 import model.Tile;
 import org.joml.Vector3f;
@@ -95,11 +96,6 @@ public class GameRenderer {
         gameLevelDisplay = new ScoreDisplay(gameScene, new Vector3f(-2.25f, 1.2f, 0.0f), 0.15f, Tile.LABEL_LEVEL, 6, 2);
 
         lineClearMessage = new LineClearMessage(rainbowScene, -2.25f, 0.0f);
-        LinkedList<LineClearMessage.Message> messages = new LinkedList<>();
-        messages.add(LineClearMessage.Message.DOUBLE);
-        messages.add(LineClearMessage.Message.COMBO);
-        lineClearMessage.setMessages(messages);
-        lineClearMessage.setComboAmount(2);
 
         ShaderProgramBG bgShader = new ShaderProgramBG();
         bgShader.createFragmentShader("fragmentBG1.glsl");
@@ -152,6 +148,11 @@ public class GameRenderer {
                 }
             }
 
+            if (state.getLineClearMessages().size() > 0) {
+                lineClearMessage.setMessages(state.getLineClearMessages());
+                lineClearMessage.setTimeStart(state.getLineClearMessagesTimestamp());
+                lineClearMessage.setComboAmount(state.getComboStreak());
+            }
             lineClearMessage.render();
         }
     }

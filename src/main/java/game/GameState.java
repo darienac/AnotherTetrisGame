@@ -1,7 +1,9 @@
 package game;
 
+import model.Message;
 import model.Tetrimino;
 import model.Tile;
+import org.lwjgl.glfw.GLFW;
 import render.LineClearMessage;
 
 import java.util.Deque;
@@ -34,7 +36,9 @@ public class GameState {
     private int gameLevel;
     private int linesCleared;
     private boolean pieceOnGround;
-    private LinkedList<LineClearMessage.Message> lineClearMessages;
+    private LinkedList<Message> lineClearMessages;
+    private double lineClearMessagesTimestamp;
+    int comboStreak;
 
     public GameState() {
         setMode(Mode.GAME);
@@ -84,6 +88,9 @@ public class GameState {
                 linesCleared = 0;
                 pieceOnGround = false;
                 lineClearMessages = new LinkedList<>();
+                lineClearMessagesTimestamp = GLFW.glfwGetTime();
+                comboStreak = -1;
+
                 break;
         }
     }
@@ -184,12 +191,24 @@ public class GameState {
         this.pieceOnGround = pieceOnGround;
     }
 
-    public LinkedList<LineClearMessage.Message> getLineClearMessages() {
+    public LinkedList<Message> getLineClearMessages() {
         return lineClearMessages;
     }
 
-    public void setLineClearMessages(LinkedList<LineClearMessage.Message> lineClearMessages) {
-        this.lineClearMessages = lineClearMessages;
+    public void setLineClearMessagesTimestamp(double time) {
+        lineClearMessagesTimestamp = time;
+    }
+
+    public double getLineClearMessagesTimestamp() {
+        return lineClearMessagesTimestamp;
+    }
+
+    public int getComboStreak() {
+        return comboStreak;
+    }
+
+    public void setComboStreak(int comboStreak) {
+        this.comboStreak = comboStreak;
     }
 
     public Tile[][] getDrawnTiles(int width, int height, boolean runSafe, boolean includeExtras) {

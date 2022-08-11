@@ -1,5 +1,6 @@
 package render;
 
+import model.Message;
 import model.Tile;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
@@ -20,7 +21,7 @@ public class LineClearMessage {
         this.gameScene = gameScene;
         this.x = x;
         this.y = y;
-        this.comboAmount = 0;
+        this.comboAmount = -1;
         transform = new ModelTransform();
         transform.setScale(0.3f);
         countDisplay = new ScoreDisplay(gameScene, new Vector3f(0.0f, 0.0f, 0.0f), 0.15f, Tile.LABEL_X, 1, 2);
@@ -28,8 +29,11 @@ public class LineClearMessage {
     }
 
     public void setMessages(LinkedList<Message> messages) {
-        this.messages = messages;
-        this.timeStart = GLFW.glfwGetTime();
+        this.messages = new LinkedList<>(messages);
+    }
+
+    public void setTimeStart(double timeStart) {
+        this.timeStart = timeStart;
     }
 
     public void setComboAmount(int comboAmount) {
@@ -37,10 +41,22 @@ public class LineClearMessage {
     }
 
     public void render() throws Exception {
-        if (messages == null || messages.size() == 0 || (GLFW.glfwGetTime() - timeStart > 3)) {
+        double delta = GLFW.glfwGetTime() - timeStart;
+        if (messages == null || messages.size() == 0 || (delta > 3)) {
             return;
         }
-        float scale = (float) (Math.sin(GLFW.glfwGetTime() * 5.0) * 0.05 + 0.35);
+
+        float fade;
+        if (delta < 0.5f) {
+            fade = (float) delta * 2;
+        } else if (delta > 2.5f) {
+            fade = 1.0f - 2 * ((float) delta - 2.5f);
+        } else {
+            fade = 1.0f;
+        }
+        gameScene.getShaderProgram3D().setUniformFloat("uMessageFade", fade);
+
+        float scale = 0.4f;
         transform.setScale(scale);
         countDisplay.setTileSize(scale / 2);
 
@@ -83,16 +99,5 @@ public class LineClearMessage {
             countDisplay.getOrigin().set(new Vector3f(x, yPos, 0.0f));
             countDisplay.renderCount(comboAmount);
         }
-    }
-
-    public enum Message {
-        TSPIN,
-        SINGLE,
-        DOUBLE,
-        TRIPLE,
-        TETRIS,
-        B2B,
-        COMBO,
-        MINI
     }
 }

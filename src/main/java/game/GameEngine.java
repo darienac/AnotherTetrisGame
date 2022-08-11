@@ -1,6 +1,7 @@
 package game;
 
 import game.GameState;
+import model.Message;
 import model.Tetrimino;
 import model.Tile;
 import org.joml.Vector3f;
@@ -12,8 +13,7 @@ import render.LineClearMessage;
 import render.Scene;
 import startup.GameWindow;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Runs independent of a consistent time interval, grabs time from GLFW.glfwGetTime()
@@ -21,6 +21,29 @@ import java.util.Set;
 public class GameEngine {
     private static final int MOVE_RESET_LIMIT = 15;
     private static final double GAME_SPEED = 0.05;
+    private static final Set<LinkedList<Message>> difficultClears = new HashSet<>();
+    private static final Map<LinkedList<Message>, Integer> clearPoints = new HashMap<>();
+
+    static {
+        difficultClears.add(new LinkedList<>(Arrays.asList(Message.TETRIS)));
+        difficultClears.add(new LinkedList<>(Arrays.asList(Message.MINI, Message.TSPIN, Message.SINGLE)));
+        difficultClears.add(new LinkedList<>(Arrays.asList(Message.TSPIN, Message.SINGLE)));
+        difficultClears.add(new LinkedList<>(Arrays.asList(Message.MINI, Message.TSPIN, Message.DOUBLE)));
+        difficultClears.add(new LinkedList<>(Arrays.asList(Message.TSPIN, Message.DOUBLE)));
+        difficultClears.add(new LinkedList<>(Arrays.asList(Message.TSPIN, Message.TRIPLE)));
+
+        clearPoints.put(new LinkedList<>(Arrays.asList(Message.SINGLE)), 100);
+        clearPoints.put(new LinkedList<>(Arrays.asList(Message.DOUBLE)), 300);
+        clearPoints.put(new LinkedList<>(Arrays.asList(Message.TRIPLE)), 500);
+        clearPoints.put(new LinkedList<>(Arrays.asList(Message.TETRIS)), 800);
+        clearPoints.put(new LinkedList<>(Arrays.asList(Message.MINI, Message.TSPIN)), 100);
+        clearPoints.put(new LinkedList<>(Arrays.asList(Message.TSPIN)), 400);
+        clearPoints.put(new LinkedList<>(Arrays.asList(Message.MINI, Message.TSPIN, Message.SINGLE)), 200);
+        clearPoints.put(new LinkedList<>(Arrays.asList(Message.TSPIN, Message.SINGLE)), 800);
+        clearPoints.put(new LinkedList<>(Arrays.asList(Message.MINI, Message.TSPIN, Message.DOUBLE)), 400);
+        clearPoints.put(new LinkedList<>(Arrays.asList(Message.TSPIN, Message.DOUBLE)), 1200);
+        clearPoints.put(new LinkedList<>(Arrays.asList(Message.TSPIN, Message.TRIPLE)), 1600);
+    }
 
     private GameState state;
     private Scene scene;
@@ -39,6 +62,7 @@ public class GameEngine {
     private int moveResetCount;
     private boolean lastMoveIsRotate;
     private int lastSrsNum;
+    private boolean b2bViable;
 
     public GameEngine(GameState state, Scene scene, GameWindow window) {
         controls = new Controls();
@@ -53,6 +77,9 @@ public class GameEngine {
         moveResetCount = 0;
         lastMoveIsRotate = false;
         lastSrsNum = -1;
+        b2bViable = false;
+
+        state.setGameLevel(16);
 
         GLFW.glfwSetKeyCallback(window.getWindowId(), new GLFWKeyCallback() {
             @Override
@@ -113,7 +140,9 @@ public class GameEngine {
             }
         }
         if (controls.up) {
-            lastMoveIsRotate = false;
+            if (state.getPieceLowestPos() != state.getGamePiece().getY()) {
+                lastMoveIsRotate = false;
+            }
             controls.up = false;
             state.setGameScore(state.getGameScore() + Math.max(gamePiece.getY() - state.getPieceLowestPos(), 0) * 2);
             gamePiece.setY(state.getPieceLowestPos());
@@ -248,9 +277,7 @@ public class GameEngine {
                 state.setGameScore(state.getGameScore() + 1);
             } else {
                 gamePiece.setY(gamePiece.getY() + 1);
-                if (state.isPieceOnGround()) {
-                    clearPiece();
-                } else {
+                if (!state.isPieceOnGround()) {
                     state.setPieceOnGround(true);
                     stepsPieceOnGround = 0;
                 }
@@ -275,21 +302,43 @@ public class GameEngine {
         checkTSpins();
         state.setSolidTiles(state.getDrawnTiles(state.getBoardWidth(), state.getBoardHeight(), true, false));
         Set<Integer> rows = findRows();
+        state.setComboStreak(state.getComboStreak() + 1);
         switch (rows.size()) {
+            case 0:
+                state.setComboStreak(-1);
+                break;
             case 1:
-                state.getLineClearMessages().add(LineClearMessage.Message.SINGLE);
+                state.getLineClearMessages().add(Message.SINGLE);
                 break;
             case 2:
-                state.getLineClearMessages().add(LineClearMessage.Message.DOUBLE);
+                state.getLineClearMessages().add(Message.DOUBLE);
                 break;
             case 3:
-                state.getLineClearMessages().add(LineClearMessage.Message.TRIPLE);
+                state.getLineClearMessages().add(Message.TRIPLE);
                 break;
             case 4:
-                state.getLineClearMessages().add(LineClearMessage.Message.TETRIS);
+                state.getLineClearMessages().add(Message.TETRIS);
                 break;
         }
-        // TODO: Somehow trigger the LineClearMessage object to change it's message and update the timer
+        int points = 0;
+        if (clearPoints.containsKey(state.getLineClearMessages())) {
+            points = clearPoints.get(state.getLineClearMessages()) * state.getGameLevel();
+        }
+        if (difficultClears.contains(state.getLineClearMessages())) {
+            if (b2bViable) {
+                points *= 1.5;
+                state.getLineClearMessages().addFirst(Message.B2B);
+            }
+            b2bViable = true;
+        } else if (rows.size() > 0) {
+            b2bViable = false;
+        }
+        if (state.getComboStreak() > 0) {
+            state.getLineClearMessages().add(Message.COMBO);
+            points += state.getComboStreak() * 50 * state.getGameLevel();
+        }
+        state.setGameScore(state.getGameScore() + points);
+        state.setLineClearMessagesTimestamp(GLFW.glfwGetTime());
         clearRows(rows);
         respawnPiece();
         state.setAllowHold(true);
@@ -301,6 +350,7 @@ public class GameEngine {
         state.setPieceOnGround(false);
         moveResetCount = 0;
         lastMoveIsRotate = false;
+        stepsPieceOnGround = 0;
     }
 
     private Tetrimino getNewPiece() {
@@ -476,13 +526,16 @@ public class GameEngine {
         if (gamePiece.getId() != 5) {
             return;
         }
+        System.out.println("checking for tspins");
 
         boolean[] corners = new boolean[4];
         Tile[][] tiles = state.getSolidTiles();
-        corners[0] = tiles[0][0] != null;
-        corners[1] = tiles[0][3] != null;
-        corners[2] = tiles[3][0] != null;
-        corners[3] = tiles[3][3] != null;
+        int x = gamePiece.getX();
+        int y = gamePiece.getY();
+        corners[0] = checkTileSolidSafe(tiles, x, y);
+        corners[1] = checkTileSolidSafe(tiles, x, y + 2);
+        corners[2] = checkTileSolidSafe(tiles, x + 2, y);
+        corners[3] = checkTileSolidSafe(tiles, x + 2, y + 2);
         int cornerCount = 0;
         for (int i = 0; i < corners.length; i++) {
             if (corners[i]) {
@@ -500,21 +553,23 @@ public class GameEngine {
 
         if (lastSrsNum == 3) {
             onTSpin();
+            return;
         }
 
-        if (gamePiece.getRotation() == 0 && corners[2] && corners[3]) {
+        // TODO: fix these
+        if (gamePiece.getRotation() == 0 && corners[1] && corners[3]) {
             onTSpin();
             return;
         }
-        if (gamePiece.getRotation() == 1 && corners[1] && corners[3]) {
+        if (gamePiece.getRotation() == 1 && corners[2] && corners[3]) {
             onTSpin();
             return;
         }
-        if (gamePiece.getRotation() == 2 && corners[0] && corners[1]) {
+        if (gamePiece.getRotation() == 2 && corners[0] && corners[2]) {
             onTSpin();
             return;
         }
-        if (gamePiece.getRotation() == 3 && corners[0] && corners[2]) {
+        if (gamePiece.getRotation() == 3 && corners[0] && corners[1]) {
             onTSpin();
             return;
         }
@@ -522,13 +577,24 @@ public class GameEngine {
         onMiniTSpin();
     }
 
+    private boolean checkTileSolidSafe(Tile[][] tiles, int x, int y) {
+        if (y < 0 || y >= tiles.length) {
+            return true;
+        }
+        Tile[] row = tiles[y];
+        if (x < 0 || x >= row.length) {
+            return true;
+        }
+        return row[x] != null;
+    }
+
     private void onTSpin() {
-        state.getLineClearMessages().add(LineClearMessage.Message.TSPIN);
+        state.getLineClearMessages().add(Message.TSPIN);
     }
 
     private void onMiniTSpin() {
-        state.getLineClearMessages().add(LineClearMessage.Message.MINI);
-        state.getLineClearMessages().add(LineClearMessage.Message.TSPIN);
+        state.getLineClearMessages().add(Message.MINI);
+        state.getLineClearMessages().add(Message.TSPIN);
     }
 }
 

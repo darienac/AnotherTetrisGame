@@ -2,8 +2,8 @@
 
 uniform sampler2D textureDiffuse;
 
-uniform float uOpacity;
 uniform float uTime;
+uniform float uMessageFade;
 
 in vec3 vPosition;
 in vec3 vNormal;
@@ -19,5 +19,5 @@ vec3 hsl2rgb(in vec3 c) {
 void main() {
     float offset = uTime + vTexCoord.x + vTexCoord.y;
     vec3 rainbowColor = hsl2rgb(vec3(offset, 1.0f, 0.8f));
-    fragColor = texture(textureDiffuse, vTexCoord) * vec4(rainbowColor, uOpacity);
+    fragColor = texture(textureDiffuse, vTexCoord) * vec4(rainbowColor, uMessageFade);
 }
