@@ -1,15 +1,11 @@
 package game;
 
-import game.GameState;
 import model.Message;
 import model.Tetrimino;
 import model.Tile;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.glfw.GLFWJoystickCallback;
 import org.lwjgl.glfw.GLFWKeyCallback;
-import org.lwjgl.glfw.GLFWKeyCallbackI;
-import render.LineClearMessage;
 import render.Scene;
 import startup.GameWindow;
 
@@ -47,15 +43,11 @@ public class GameEngine {
 
     private GameState state;
     private Scene scene;
-    private GameWindow window;
     private Controls controls;
     private double lastTime;
     private double lastTimeStepFall;
     private double lastTimeStepGame;
-    private int fallSteps;
-    private int gameSteps;
     private int dirFramesHeld;
-    private int turnDirFramesHeld;
     private int dirLast;
     private int turnDirLast;
     private int stepsPieceOnGround;
@@ -71,8 +63,6 @@ public class GameEngine {
         lastTimeStepGame = lastTime;
         dirLast = 0;
         turnDirLast = 0;
-        fallSteps = 0;
-        gameSteps = 0;
         stepsPieceOnGround = 0;
         moveResetCount = 0;
         lastMoveIsRotate = false;
@@ -229,7 +219,6 @@ public class GameEngine {
         }
         if (turnDir == 0 || turnDir != turnDirLast) {
             turnDirLast = turnDir;
-            turnDirFramesHeld = 0;
         }
 
         if (dirFramesHeld > 3 || dirFramesHeld == 0) {
@@ -526,7 +515,6 @@ public class GameEngine {
         if (gamePiece.getId() != 5) {
             return;
         }
-        System.out.println("checking for tspins");
 
         boolean[] corners = new boolean[4];
         Tile[][] tiles = state.getSolidTiles();
@@ -556,7 +544,6 @@ public class GameEngine {
             return;
         }
 
-        // TODO: fix these
         if (gamePiece.getRotation() == 0 && corners[1] && corners[3]) {
             onTSpin();
             return;
