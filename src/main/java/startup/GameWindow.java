@@ -75,12 +75,12 @@ public class GameWindow implements AutoCloseable {
         }
         GLUtil.setupDebugMessageCallback();
 
-        ALCapabilities capsAudio = AL.createCapabilities(ALC.getCapabilities());
+        // ALCapabilities capsAudio = AL.createCapabilities(ALC.getCapabilities());
 
         gameState = new GameState();
         gameRenderer = new GameRenderer(gameState, this);
         gameEngine = new GameEngine(gameState, gameRenderer.getGameScene(), this);
-        audioPlayer = new GameAudio();
+        // audioPlayer = new GameAudio();
     }
 
     public int getWidth() {
