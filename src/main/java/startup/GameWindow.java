@@ -1,10 +1,15 @@
 package startup;
 
+import audio.GameAudio;
 import game.GameEngine;
 import game.GameState;
 import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWVidMode;
+import org.lwjgl.openal.AL;
+import org.lwjgl.openal.ALC;
+import org.lwjgl.openal.ALCapabilities;
+import org.lwjgl.openal.ALUtil;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.opengl.GLUtil;
@@ -18,6 +23,7 @@ public class GameWindow implements AutoCloseable {
     private GameState gameState;
     private GameRenderer gameRenderer;
     private GameEngine gameEngine;
+    private GameAudio audioPlayer;
     private int width;
     private int height;
     private boolean resized;
@@ -69,9 +75,12 @@ public class GameWindow implements AutoCloseable {
         }
         GLUtil.setupDebugMessageCallback();
 
+        ALCapabilities capsAudio = AL.createCapabilities(ALC.getCapabilities());
+
         gameState = new GameState();
         gameRenderer = new GameRenderer(gameState, this);
         gameEngine = new GameEngine(gameState, gameRenderer.getGameScene(), this);
+        audioPlayer = new GameAudio();
     }
 
     public int getWidth() {
