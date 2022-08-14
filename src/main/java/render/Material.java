@@ -49,10 +49,8 @@ public class Material {
         TextureCache textCache = TextureCache.getInstance();
 
         if (textPath.length() > 0) {
-            System.out.println(textPath);
             texture = textCache.getTexture(textPath);
         } else {
-            System.out.println("default texture");
             texture = textCache.getTexture(null);
         }
 

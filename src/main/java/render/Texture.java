@@ -19,7 +19,6 @@ public class Texture implements AutoCloseable {
 
     public Texture(String fileName) throws Exception {
         try (MemoryStack stack = stackPush()) {
-            System.out.println(TEXTURE_PATH + fileName);
 
             IntBuffer w = stack.mallocInt(1);
             IntBuffer h = stack.mallocInt(1);

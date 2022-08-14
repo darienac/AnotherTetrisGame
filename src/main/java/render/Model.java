@@ -35,14 +35,12 @@ public class Model {
         int materialCount = aiScene.mNumMaterials();
         PointerBuffer aiMaterials = aiScene.mMaterials();
         List<Material> materials = new ArrayList<>();
-        System.out.println("Materials: " + materialCount);
         for (int i = 0; i < materialCount; i++) {
             AIMaterial aiMaterial = AIMaterial.create(aiMaterials.get(i));
             materials.add(new Material(aiMaterial));
         }
 
         int meshCount = aiScene.mNumMeshes();
-        System.out.println("Meshes: " + meshCount);
         PointerBuffer aiMeshes = aiScene.mMeshes();
         Mesh[] meshes = new Mesh[meshCount];
         for (int i = 0; i < meshCount; i++) {

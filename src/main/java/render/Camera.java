@@ -34,4 +34,8 @@ public class Camera {
         float aspect = (float) window.getWidth() / window.getHeight();
         return (new Matrix4f()).perspective(fovy, aspect, zNear, zFar).lookAt(position, target, up);
     }
+
+    public Matrix4f getCameraMatrix() {
+        return (new Matrix4f()).lookAt(position, target, up);
+    }
 }
