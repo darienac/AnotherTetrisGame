@@ -31,8 +31,12 @@ public class Camera {
     }
 
     public Matrix4f getViewProjectionMatrix() {
-        float aspect = (float) window.getWidth() / window.getHeight();
+        float aspect = getAspectRatio();
         return (new Matrix4f()).perspective(fovy, aspect, zNear, zFar).lookAt(position, target, up);
+    }
+
+    public float getAspectRatio() {
+        return (float) window.getWidth() / window.getHeight();
     }
 
     public Matrix4f getCameraMatrix() {

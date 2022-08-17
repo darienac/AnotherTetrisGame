@@ -1,5 +1,7 @@
 package shaders;
 
+import render.Texture;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -82,6 +84,13 @@ public class ShaderProgram implements AutoCloseable {
     public void setUniformFloat(String name, float value) {
         bind();
         glUniform1f(glGetUniformLocation(getProgramId(), name), value);
+    }
+
+    public void bindTexture(String name, int textureUnit, Texture texture) {
+        bind();
+        glUniform1i(glGetUniformLocation(getProgramId(), name), textureUnit);
+        glActiveTexture(GL_TEXTURE0 + textureUnit);
+        glBindTexture(GL_TEXTURE_2D, texture.getTextureId());
     }
 
     @Override

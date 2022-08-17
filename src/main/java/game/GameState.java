@@ -8,6 +8,9 @@ import render.LineClearMessage;
 
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static model.Tile.*;
 
@@ -38,7 +41,12 @@ public class GameState {
     private boolean pieceOnGround;
     private LinkedList<Message> lineClearMessages;
     private double lineClearMessagesTimestamp;
-    int comboStreak;
+    private int comboStreak;
+    private boolean lineClear;
+    private double lineClearStart;
+    private Set<Integer> clearRows;
+
+    public Lock lock = new ReentrantLock();
 
     public GameState() {
         setMode(Mode.GAME);
@@ -90,6 +98,9 @@ public class GameState {
                 lineClearMessages = new LinkedList<>();
                 lineClearMessagesTimestamp = GLFW.glfwGetTime();
                 comboStreak = -1;
+                lineClearStart = 0.0;
+                lineClear = false;
+                clearRows = null;
 
                 break;
         }
@@ -209,6 +220,30 @@ public class GameState {
 
     public void setComboStreak(int comboStreak) {
         this.comboStreak = comboStreak;
+    }
+
+    public boolean isLineClear() {
+        return lineClear;
+    }
+
+    public void setLineClear(boolean lineClear) {
+        this.lineClear = lineClear;
+    }
+
+    public double getLineClearStart() {
+        return lineClearStart;
+    }
+
+    public void setLineClearStart(double lineClearStart) {
+        this.lineClearStart = lineClearStart;
+    }
+
+    public Set<Integer> getClearRows() {
+        return clearRows;
+    }
+
+    public void setClearRows(Set<Integer> clearRows) {
+        this.clearRows = clearRows;
     }
 
     public Tile[][] getDrawnTiles(int width, int height, boolean runSafe, boolean includeExtras) {

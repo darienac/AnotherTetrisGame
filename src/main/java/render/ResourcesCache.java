@@ -7,6 +7,7 @@ public class ResourcesCache {
     private static ResourcesCache resourcesCache = null;
 
     private final Texture metalReflect;
+    private final Texture dissolve;
 
     private final Model tetrisBlock;
     private final Model ghostBlock;
@@ -22,6 +23,7 @@ public class ResourcesCache {
 
     private ResourcesCache() throws Exception {
         metalReflect = new Texture("metalReflection.png");
+        dissolve = new Texture("pieceDecay.png");
 
         tetrisBlock = new Model("tetrisBlock.obj");
         tetrisBlockMaterial = tetrisBlock.getMeshes()[0].getMaterial();
@@ -60,6 +62,10 @@ public class ResourcesCache {
 
     public Texture getMetalReflect() {
         return metalReflect;
+    }
+
+    public Texture getDissolve() {
+        return dissolve;
     }
 
     public Model getTetrisBlock() {

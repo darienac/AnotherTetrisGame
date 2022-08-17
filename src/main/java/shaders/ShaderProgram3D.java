@@ -41,6 +41,7 @@ public class ShaderProgram3D extends ShaderProgram {
 
     public int uOpacity;
     public int uTime;
+    public int uAspect;
 
 
     public ShaderProgram3D() throws Exception {
@@ -83,5 +84,6 @@ public class ShaderProgram3D extends ShaderProgram {
 
         uOpacity = glGetUniformLocation(getProgramId(), "uOpacity");
         uTime = glGetUniformLocation(getProgramId(), "uTime");
+        uAspect = glGetUniformLocation(getProgramId(), "uAspect");
     }
 }

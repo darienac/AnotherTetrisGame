@@ -14,7 +14,7 @@ import java.util.*;
 /**
  * Runs independent of a consistent time interval, grabs time from GLFW.glfwGetTime()
  */
-public class GameEngine {
+public class GameEngine implements Runnable {
     private static final int MOVE_RESET_LIMIT = 15;
     private static final double GAME_SPEED = 0.05;
     private static final Set<LinkedList<Message>> difficultClears = new HashSet<>();
@@ -44,6 +44,7 @@ public class GameEngine {
     private GameState state;
     private Scene scene;
     private Controls controls;
+    private GameWindow window;
     private double lastTime;
     private double lastTimeStepFall;
     private double lastTimeStepGame;
@@ -78,88 +79,134 @@ public class GameEngine {
 
         this.state = state;
         this.scene = scene;
+        this.window = window;
         respawnPiece();
         updateGameSpeed();
     }
 
-    public void run() {
-        double time = GLFW.glfwGetTime();
-        double delta = time - lastTime;
-        int stepsFall = (int) ((time - lastTimeStepFall) / state.getGameSpeed());
-        lastTimeStepFall = lastTimeStepFall + stepsFall * state.getGameSpeed();
-        int stepsGame = (int) ((time - lastTimeStepGame) / GAME_SPEED);
-        lastTimeStepGame = lastTimeStepGame + stepsGame * GAME_SPEED;
-        lastTime = time;
-
-        Tetrimino gamePiece = state.getGamePiece();
-
-        controls.readGamepadInputs(GLFW.GLFW_JOYSTICK_1);
-
-        if (controls.turnLeft) {
-            controls.turnLeft = false;
-            gamePiece.setRotation(gamePiece.getRotation() - 1);
-            if (tryWallKicks(-1)) {
-                if (state.isPieceOnGround() && moveResetCount < MOVE_RESET_LIMIT) {
-                    moveResetCount++;
-                    stepsPieceOnGround = 0;
-                }
-                gamePiece.setY(gamePiece.getY() - 1);
-                state.setPieceOnGround(!state.isValidTilePos());
-                gamePiece.setY(gamePiece.getY() + 1);
-                lastMoveIsRotate = true;
-            } else {
-                gamePiece.setRotation(gamePiece.getRotation() + 1);
+    public synchronized void run() {
+        while (true) {
+            switch (state.getMode()) {
+                case GAME:
+                    if (state.isLineClear()) {
+                        try {
+                            this.wait(1000);
+                        } catch (InterruptedException ex) {
+                            break;
+                        }
+                        state.lock.lock();
+                        try {
+                            clearRows(state.getClearRows());
+                            respawnPiece();
+                            state.setLineClear(false);
+                            double time = GLFW.glfwGetTime();
+                            lastTimeStepFall = time;
+                            lastTimeStepGame = time;
+                        } finally {
+                            state.lock.unlock();
+                        }
+                    } else {
+                        gameLoop();
+                    }
+            }
+            try {
+                this.wait(10);
+            } catch (InterruptedException ex) {
+                break;
+            }
+            if (Thread.currentThread().isInterrupted()) {
+                break;
             }
         }
-        if (controls.turnRight) {
-            controls.turnRight = false;
-            gamePiece.setRotation(gamePiece.getRotation() + 1);
-            if (tryWallKicks(1)) {
-                if (state.isPieceOnGround() && moveResetCount < MOVE_RESET_LIMIT) {
-                    moveResetCount++;
-                    stepsPieceOnGround = 0;
-                }
-                gamePiece.setY(gamePiece.getY() - 1);
-                state.setPieceOnGround(!state.isValidTilePos());
-                gamePiece.setY(gamePiece.getY() + 1);
-                lastMoveIsRotate = true;
-            } else {
+    }
+
+    public void gameLoop() {
+        state.lock.lock();
+        try {
+            double time = GLFW.glfwGetTime();
+            double delta = time - lastTime;
+            int stepsFall = (int) ((time - lastTimeStepFall) / state.getGameSpeed());
+            lastTimeStepFall = lastTimeStepFall + stepsFall * state.getGameSpeed();
+            int stepsGame = (int) ((time - lastTimeStepGame) / GAME_SPEED);
+            lastTimeStepGame = lastTimeStepGame + stepsGame * GAME_SPEED;
+            lastTime = time;
+
+            Tetrimino gamePiece = state.getGamePiece();
+
+            controls.readGamepadInputs(GLFW.GLFW_JOYSTICK_1);
+
+            if (controls.turnLeft) {
+                controls.turnLeft = false;
                 gamePiece.setRotation(gamePiece.getRotation() - 1);
-            }
-        }
-        if (controls.up) {
-            if (state.getPieceLowestPos() != state.getGamePiece().getY()) {
-                lastMoveIsRotate = false;
-            }
-            controls.up = false;
-            state.setGameScore(state.getGameScore() + Math.max(gamePiece.getY() - state.getPieceLowestPos(), 0) * 2);
-            gamePiece.setY(state.getPieceLowestPos());
-            clearPiece();
-        }
-        if (controls.holdPiece) {
-            controls.holdPiece = false;
-            if (state.isAllowHold()) {
-                state.setAllowHold(false);
-                Tetrimino newPiece;
-                if (state.getHeldPiece() == null) {
-                    newPiece = getNewPiece();
+                if (tryWallKicks(-1)) {
+                    if (state.isPieceOnGround() && moveResetCount < MOVE_RESET_LIMIT) {
+                        moveResetCount++;
+                        stepsPieceOnGround = 0;
+                    }
+                    gamePiece.setY(gamePiece.getY() - 1);
+                    state.setPieceOnGround(!state.isValidTilePos());
+                    gamePiece.setY(gamePiece.getY() + 1);
+                    lastMoveIsRotate = true;
                 } else {
-                    newPiece = state.getHeldPiece();
+                    gamePiece.setRotation(gamePiece.getRotation() + 1);
                 }
-                state.setHeldPiece(state.getGamePiece());
-                state.setGamePiece(newPiece);
-                resetPiecePosition(newPiece);
             }
-        }
+            if (controls.turnRight) {
+                controls.turnRight = false;
+                gamePiece.setRotation(gamePiece.getRotation() + 1);
+                if (tryWallKicks(1)) {
+                    if (state.isPieceOnGround() && moveResetCount < MOVE_RESET_LIMIT) {
+                        moveResetCount++;
+                        stepsPieceOnGround = 0;
+                    }
+                    gamePiece.setY(gamePiece.getY() - 1);
+                    state.setPieceOnGround(!state.isValidTilePos());
+                    gamePiece.setY(gamePiece.getY() + 1);
+                    lastMoveIsRotate = true;
+                } else {
+                    gamePiece.setRotation(gamePiece.getRotation() - 1);
+                }
+            }
+            if (controls.up) {
+                if (state.getPieceLowestPos() != state.getGamePiece().getY()) {
+                    lastMoveIsRotate = false;
+                }
+                controls.up = false;
+                state.setGameScore(state.getGameScore() + Math.max(gamePiece.getY() - state.getPieceLowestPos(), 0) * 2);
+                gamePiece.setY(state.getPieceLowestPos());
+                clearPiece();
+            }
+            if (controls.holdPiece) {
+                controls.holdPiece = false;
+                if (state.isAllowHold()) {
+                    state.setAllowHold(false);
+                    Tetrimino newPiece;
+                    if (state.getHeldPiece() == null) {
+                        newPiece = getNewPiece();
+                    } else {
+                        newPiece = state.getHeldPiece();
+                    }
+                    state.setHeldPiece(state.getGamePiece());
+                    state.setGamePiece(newPiece);
+                    resetPiecePosition(newPiece);
+                }
+            }
 
-        scene.getCamera().setPosition(new Vector3f(0.0f + controls.cameraX * 2.5f, 2.0f + controls.cameraY * 2.5f, 10.0f));
+            scene.getCamera().setPosition(new Vector3f(0.0f + controls.cameraX * 2.5f, 2.0f + controls.cameraY * 2.5f, 10.0f));
 
-        for (int i = 0; i < stepsGame; i++) {
-            runStepGame();
+            for (int i = 0; i < stepsGame; i++) {
+                runStepGame();
+            }
+            for (int i = 0; i < stepsFall; i++) {
+                runStepFall();
+            }
+        } finally {
+            state.lock.unlock();
         }
-        for (int i = 0; i < stepsFall; i++) {
-            runStepFall();
-        }
+    }
+
+    public Controls getControls() {
+        return controls;
     }
 
     public void runStepFall() {
@@ -288,9 +335,9 @@ public class GameEngine {
         state.getLineClearMessages().clear();
         checkTSpins();
         state.setSolidTiles(state.getDrawnTiles(state.getBoardWidth(), state.getBoardHeight(), true, false));
-        Set<Integer> rows = findRows();
+        state.setClearRows(findRows());
         state.setComboStreak(state.getComboStreak() + 1);
-        switch (rows.size()) {
+        switch (state.getClearRows().size()) {
             case 0:
                 state.setComboStreak(-1);
                 break;
@@ -317,7 +364,7 @@ public class GameEngine {
                 state.getLineClearMessages().addFirst(Message.B2B);
             }
             b2bViable = true;
-        } else if (rows.size() > 0) {
+        } else if (state.getClearRows().size() > 0) {
             b2bViable = false;
         }
         if (state.getComboStreak() > 0) {
@@ -326,9 +373,13 @@ public class GameEngine {
         }
         state.setGameScore(state.getGameScore() + points);
         state.setLineClearMessagesTimestamp(GLFW.glfwGetTime());
-        clearRows(rows);
-        respawnPiece();
         state.setAllowHold(true);
+        if (state.getClearRows().size() > 0) {
+            state.setLineClear(true);
+            state.setLineClearStart(GLFW.glfwGetTime());
+        } else {
+            respawnPiece();
+        }
     }
 
     private void respawnPiece() {

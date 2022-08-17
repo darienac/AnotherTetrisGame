@@ -28,6 +28,8 @@ public class GameRenderer {
 
     private final ShaderProgram3D shaderProgram3D;
     private final ShaderProgram3D rainbowShader;
+    private final ShaderProgram3D pulseShader;
+    private final ShaderProgram3D dissolveShader;
 
     private final TileDrawer tetrisBoard;
 
@@ -43,9 +45,12 @@ public class GameRenderer {
     private final TileDrawer pieceDrawer4x4;
 
     private final BGRenderer bgRenderer;
-    private ScoreDisplay gameScoreDisplay;
-    private ScoreDisplay gameLevelDisplay;
-    private LineClearMessage lineClearMessage;
+    private final ScoreDisplay gameScoreDisplay;
+    private final ScoreDisplay gameLevelDisplay;
+    private final LineClearMessage lineClearMessage;
+
+    private double lastFramerateCheck;
+    private int framesPerSecond;
 
     public GameRenderer(GameState state, GameWindow window) throws Exception {
         this.state = state;
@@ -72,6 +77,16 @@ public class GameRenderer {
         rainbowScene = new Scene(window, rainbowShader);
         rainbowScene.setCamera(gameScene.getCamera());
         rainbowScene.setLightSource(gameScene.getLightSource());
+
+        pulseShader = new ShaderProgram3D();
+        pulseShader.createVertexShader("vertex3d.glsl");
+        pulseShader.createFragmentShader("fragment3dPulse.glsl");
+        pulseShader.link();
+
+        dissolveShader = new ShaderProgram3D();
+        dissolveShader.createVertexShader("vertex3d.glsl");
+        dissolveShader.createFragmentShader("fragment3dDissolve.glsl");
+        dissolveShader.link();
 
         tetrisBoard = new TileDrawer(gameScene, new Vector3f(0.0f, 0.0f, 0.0f), 0.25f, 12, 22);
 
@@ -102,6 +117,9 @@ public class GameRenderer {
         bgShader.createVertexShader("vertexBG.glsl");
         bgShader.link();
         bgRenderer = new BGRenderer(bgShader, new Texture("clouds.png"));
+
+        lastFramerateCheck = GLFW.glfwGetTime();
+        framesPerSecond = 0;
     }
 
     public Scene getGameScene() {
@@ -109,51 +127,81 @@ public class GameRenderer {
     }
 
     public void render() throws Exception {
-        double time = GLFW.glfwGetTime();
-
-        glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        if (window.isResized()) {
-            glViewport(0, 0, window.getWidth(), window.getHeight());
-            window.setResized(false);
+        framesPerSecond++;
+        if (GLFW.glfwGetTime() - lastFramerateCheck > 1.0) {
+            lastFramerateCheck = Math.floor(GLFW.glfwGetTime() - lastFramerateCheck) + lastFramerateCheck;
+            if (framesPerSecond < 60) {
+                System.out.println("FPS: " + framesPerSecond);
+            }
+            framesPerSecond = 0;
         }
 
-        if (state.getMode() == GameState.Mode.GAME) {
-            shaderProgram3D.bind();
+        state.lock.lock();
+        try {
+            double time = GLFW.glfwGetTime();
 
-            if (state.getBgOption() == 1) {
-                bgRenderer.render(window);
-                gameScene.getAmbientLightColor().set(new Vector3f(0.3f, 0.15f, 1.0f));
-                gameScene.getLightSource().setColor(new Vector3f(1.4f, 1.2f, 1.6f));
+            glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            if (window.isResized()) {
+                glViewport(0, 0, window.getWidth(), window.getHeight());
+                window.setResized(false);
             }
 
-            gameScoreDisplay.renderCount(state.getGameScore());
-            gameLevelDisplay.renderCount(state.getGameLevel());
+            if (state.getMode() == GameState.Mode.GAME) {
+                shaderProgram3D.bind();
 
-            holdText.render(gameScene, holdTextT);
-            nextText.render(gameScene, nextTextT);
-            drawTetrimino(state.getHeldPiece(), new Vector3f(-2.25f, 2.0f, 0.0f));
-            Vector3f nextPiecesPos = new Vector3f(2.25f, 2.0f, 0.0f);
-            for (Tetrimino piece : state.getNextPieces()) {
-                drawTetrimino(piece, nextPiecesPos);
-                nextPiecesPos.y -= 0.8f;
-            }
-
-            drawTileBox(tetrisBoard, 0, 0, 11, 21);
-            Tile[][] tiles = state.getDrawnTiles(10, 20, true, true);
-            for (int y = 0; y < 20; y++) {
-                for (int x = 0; x < 10; x++) {
-                    tetrisBoard.render(tiles[y][x], x + 1, y + 1);
+                if (state.getBgOption() == 1) {
+                    bgRenderer.render(window);
+                    gameScene.getAmbientLightColor().set(new Vector3f(0.3f, 0.15f, 1.0f));
+                    gameScene.getLightSource().setColor(new Vector3f(1.4f, 1.2f, 1.6f));
                 }
-            }
 
-            if (state.getLineClearMessages().size() > 0) {
-                lineClearMessage.setMessages(state.getLineClearMessages());
-                lineClearMessage.setTimeStart(state.getLineClearMessagesTimestamp());
-                lineClearMessage.setComboAmount(state.getComboStreak());
+                gameScoreDisplay.renderCount(state.getGameScore());
+                gameLevelDisplay.renderCount(state.getGameLevel());
+
+                holdText.render(gameScene, holdTextT);
+                nextText.render(gameScene, nextTextT);
+                drawTetrimino(state.getHeldPiece(), new Vector3f(-2.25f, 2.0f, 0.0f));
+                Vector3f nextPiecesPos = new Vector3f(2.25f, 2.0f, 0.0f);
+                for (Tetrimino piece : state.getNextPieces()) {
+                    drawTetrimino(piece, nextPiecesPos);
+                    nextPiecesPos.y -= 0.8f;
+                }
+
+                drawTileBox(tetrisBoard, 0, 0, 11, 21);
+                Tile[][] tiles = state.getDrawnTiles(10, 20, true, true);
+                Tile[][] tilesSolid = state.getSolidTiles();
+                for (int y = 0; y < 20; y++) {
+                    if (state.isLineClear() && state.getClearRows().contains(y)) {
+                        gameScene.setShaderProgram(dissolveShader);
+                        float deltaTime = (float) (GLFW.glfwGetTime() - state.getLineClearStart());
+                        dissolveShader.setUniformFloat("uDeltaTime", (float) (Math.sqrt(3) * Math.pow(deltaTime, 0.5)));
+                        dissolveShader.bindTexture("textureDissolve", 2, ResourcesCache.getInstance().getDissolve());
+                    } else {
+                        gameScene.setShaderProgram(shaderProgram3D);
+                    }
+                    for (int x = 0; x < 10; x++) {
+                        if (state.isPieceOnGround() && tilesSolid[y][x] == null && tiles[y][x] != null && tiles[y][x] != Tile.BLOCK_GHOST) {
+                            gameScene.setShaderProgram(pulseShader);
+                            tetrisBoard.render(tiles[y][x], x + 1, y + 1);
+                            gameScene.setShaderProgram(shaderProgram3D);
+                        } else {
+                            tetrisBoard.render(tiles[y][x], x + 1, y + 1);
+                        }
+                    }
+                }
+                gameScene.setShaderProgram(shaderProgram3D);
+
+                if (state.getLineClearMessages().size() > 0) {
+                    lineClearMessage.setMessages(state.getLineClearMessages());
+                    lineClearMessage.setTimeStart(state.getLineClearMessagesTimestamp());
+                    lineClearMessage.setComboAmount(state.getComboStreak());
+                }
+                lineClearMessage.render();
             }
-            lineClearMessage.render();
+        } finally {
+            state.lock.unlock();
         }
     }
 

@@ -116,6 +116,7 @@ public class Mesh {
 
         glUniform1f(shaderProgram3D.uOpacity, material.getOpacity());
         glUniform1f(shaderProgram3D.uTime, (float) GLFW.glfwGetTime());
+        glUniform1f(shaderProgram3D.uAspect, camera.getAspectRatio());
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementArrayBuffer);
         glDrawElements(GL_TRIANGLES, elementCount, GL_UNSIGNED_INT, 0);

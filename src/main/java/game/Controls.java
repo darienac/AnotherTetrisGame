@@ -22,6 +22,7 @@ public class Controls {
     public boolean holdPiece = false;
     public float cameraX = 0.0f;
     public float cameraY = 0.0f;
+    public boolean fullscreenToggle = false;
 
     private GLFWGamepadState lastGamepadState = null;
 
@@ -61,6 +62,10 @@ public class Controls {
             case GLFW_KEY_R:
             case GLFW_KEY_C:
                 holdPiece = value || holdPiece;
+                break;
+            case GLFW_KEY_F:
+            case GLFW_KEY_F11:
+                fullscreenToggle = value || fullscreenToggle;
                 break;
         }
     }
