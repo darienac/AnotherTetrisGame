@@ -3,6 +3,7 @@ package game;
 import model.Message;
 import model.Tetrimino;
 import model.Tile;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWKeyCallback;
@@ -192,7 +193,7 @@ public class GameEngine implements Runnable {
                 }
             }
 
-            scene.getCamera().setPosition(new Vector3f(0.0f + controls.cameraX * 2.5f, 2.0f + controls.cameraY * 2.5f, 10.0f));
+            state.setCameraControls(new Vector2f(controls.cameraX, controls.cameraY));
 
             for (int i = 0; i < stepsGame; i++) {
                 runStepGame();
@@ -281,8 +282,10 @@ public class GameEngine implements Runnable {
                         }
                         gamePiece.setY(gamePiece.getY() + 1);
                     }
+                    setCameraPushDirection(GameState.CameraPushDirection.NONE);
                 } else {
                     gamePiece.setX(gamePiece.getX() + 1);
+                    setCameraPushDirection(GameState.CameraPushDirection.LEFT);
                 }
             } else if (dir == 1) {
                 gamePiece.setX(gamePiece.getX() + 1);
@@ -298,9 +301,13 @@ public class GameEngine implements Runnable {
                         }
                         gamePiece.setY(gamePiece.getY() + 1);
                     }
+                    setCameraPushDirection(GameState.CameraPushDirection.NONE);
                 } else {
                     gamePiece.setX(gamePiece.getX() - 1);
+                    setCameraPushDirection(GameState.CameraPushDirection.RIGHT);
                 }
+            } else {
+                setCameraPushDirection(GameState.CameraPushDirection.NONE);
             }
         }
 
@@ -324,6 +331,15 @@ public class GameEngine implements Runnable {
         if (state.isPieceOnGround()) {
             stepsPieceOnGround++;
         }
+    }
+
+    private void setCameraPushDirection(GameState.CameraPushDirection direction) {
+        if (direction == state.getCameraPushDirection()) {
+            return;
+        }
+        state.setLastCameraPushDirection(state.getCameraPushDirection());
+        state.setCameraPushDirection(direction);
+        state.setCameraPushTimestamp(GLFW.glfwGetTime());
     }
 
     private void updateGameSpeed() {

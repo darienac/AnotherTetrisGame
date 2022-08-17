@@ -3,6 +3,7 @@ package game;
 import model.Message;
 import model.Tetrimino;
 import model.Tile;
+import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
 import render.LineClearMessage;
 
@@ -34,7 +35,6 @@ public class GameState {
     private RandomPieceGenerator pieceGenerator;
 
     private double gameSpeed;
-    private int gameTicks;
     private int gameScore;
     private int gameLevel;
     private int linesCleared;
@@ -45,6 +45,10 @@ public class GameState {
     private boolean lineClear;
     private double lineClearStart;
     private Set<Integer> clearRows;
+    private CameraPushDirection cameraPushDirection;
+    private CameraPushDirection lastCameraPushDirection;
+    private double cameraPushTimestamp;
+    private Vector2f cameraControls;
 
     public Lock lock = new ReentrantLock();
 
@@ -82,7 +86,7 @@ public class GameState {
                 heldPiece = null;
                 allowHold = true;
 
-                nextPieces = new LinkedList<Tetrimino>();
+                nextPieces = new LinkedList<>();
                 pieceGenerator = new RandomPieceGenerator();
                 for (int i = 0; i < 4; i++) {
                     nextPieces.add(pieceGenerator.nextPiece());
@@ -90,7 +94,6 @@ public class GameState {
 
                 solidTiles = new Tile[GAME_HEIGHT][GAME_WIDTH];
 
-                gameTicks = 0;
                 gameScore = 0;
                 gameLevel = 1;
                 linesCleared = 0;
@@ -101,6 +104,11 @@ public class GameState {
                 lineClearStart = 0.0;
                 lineClear = false;
                 clearRows = null;
+
+                cameraPushDirection = CameraPushDirection.NONE;
+                lastCameraPushDirection = CameraPushDirection.NONE;
+                cameraPushTimestamp = 0.0;
+                cameraControls = new Vector2f(0.0f, 0.0f);
 
                 break;
         }
@@ -160,14 +168,6 @@ public class GameState {
 
     public void setGameSpeed(double gameSpeed) {
         this.gameSpeed = gameSpeed;
-    }
-
-    public int getGameTicks() {
-        return gameTicks;
-    }
-
-    public void setGameTicks(int gameTicks) {
-        this.gameTicks = gameTicks;
     }
 
     public int getGameScore() {
@@ -244,6 +244,38 @@ public class GameState {
 
     public void setClearRows(Set<Integer> clearRows) {
         this.clearRows = clearRows;
+    }
+
+    public CameraPushDirection getCameraPushDirection() {
+        return cameraPushDirection;
+    }
+
+    public void setCameraPushDirection(CameraPushDirection cameraPushDirection) {
+        this.cameraPushDirection = cameraPushDirection;
+    }
+
+    public CameraPushDirection getLastCameraPushDirection() {
+        return lastCameraPushDirection;
+    }
+
+    public void setLastCameraPushDirection(CameraPushDirection lastCameraPushDirection) {
+        this.lastCameraPushDirection = lastCameraPushDirection;
+    }
+
+    public double getCameraPushTimestamp() {
+        return cameraPushTimestamp;
+    }
+
+    public void setCameraPushTimestamp(double cameraPushTimestamp) {
+        this.cameraPushTimestamp = cameraPushTimestamp;
+    }
+
+    public Vector2f getCameraControls() {
+        return cameraControls;
+    }
+
+    public void setCameraControls(Vector2f cameraControls) {
+        this.cameraControls = cameraControls;
     }
 
     public Tile[][] getDrawnTiles(int width, int height, boolean runSafe, boolean includeExtras) {
@@ -332,5 +364,13 @@ public class GameState {
 
     public enum Mode {
         GAME
+    }
+
+    public enum CameraPushDirection {
+        NONE,
+        LEFT,
+        RIGHT,
+        UP,
+        DOWN
     }
 }

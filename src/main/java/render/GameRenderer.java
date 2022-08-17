@@ -5,6 +5,7 @@ import game.GameState;
 import model.Message;
 import model.Tetrimino;
 import model.Tile;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import render2D.BGRenderer;
@@ -149,6 +150,8 @@ public class GameRenderer {
             }
 
             if (state.getMode() == GameState.Mode.GAME) {
+                setCameraPos();
+
                 shaderProgram3D.bind();
 
                 if (state.getBgOption() == 1) {
@@ -203,6 +206,39 @@ public class GameRenderer {
         } finally {
             state.lock.unlock();
         }
+    }
+
+    private void setCameraPos() {
+        Vector3f pos1 = getCameraPushPos(state.getLastCameraPushDirection());
+        Vector3f pos2 = getCameraPushPos(state.getCameraPushDirection());
+        double delta = (GLFW.glfwGetTime() - state.getCameraPushTimestamp());
+        double biasPos = Math.max(0, Math.min(1, delta / 0.2));
+
+        double bias = biasPos < 0.5 ? 2 * biasPos * biasPos : 1 - Math.pow(-2 * biasPos + 2, 2) / 2;
+        Vector3f pos3 = pos1.mul((float) (1 - biasPos)).add(pos2.mul((float) biasPos));
+        Vector2f cameraControls = state.getCameraControls();
+        pos3.x += cameraControls.x * 2.5f;
+        pos3.y += cameraControls.y * 2.5f;
+        gameScene.getCamera().setPosition(pos3);
+    }
+
+    private Vector3f getCameraPushPos(GameState.CameraPushDirection pushDir) {
+        Vector3f pos = new Vector3f(0.0f, 2.0f, 10.0f);
+        switch (pushDir) {
+            case LEFT:
+                pos.x -= 0.25;
+                break;
+            case RIGHT:
+                pos.x += 0.25;
+                break;
+            case UP:
+                pos.y += 0.25;
+                break;
+            case DOWN:
+                pos.y -= 0.25;
+                break;
+        }
+        return pos;
     }
 
     private void drawTileBox(TileDrawer tileDrawer, int x0, int y0, int x1, int y1) throws Exception {
