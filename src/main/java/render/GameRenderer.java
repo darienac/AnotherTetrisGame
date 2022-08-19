@@ -132,7 +132,7 @@ public class GameRenderer {
         if (GLFW.glfwGetTime() - lastFramerateCheck > 1.0) {
             lastFramerateCheck = Math.floor(GLFW.glfwGetTime() - lastFramerateCheck) + lastFramerateCheck;
             if (framesPerSecond < 60) {
-                System.out.println("FPS: " + framesPerSecond);
+                // System.out.println("FPS: " + framesPerSecond);
             }
             framesPerSecond = 0;
         }

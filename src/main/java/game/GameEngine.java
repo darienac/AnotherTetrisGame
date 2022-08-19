@@ -405,6 +405,9 @@ public class GameEngine implements Runnable {
         moveResetCount = 0;
         lastMoveIsRotate = false;
         stepsPieceOnGround = 0;
+        if (!state.isValidTilePos()) {
+            gameOver();
+        }
     }
 
     private Tetrimino getNewPiece() {
@@ -647,5 +650,10 @@ public class GameEngine implements Runnable {
     private void onMiniTSpin() {
         state.getLineClearMessages().add(Message.MINI);
         state.getLineClearMessages().add(Message.TSPIN);
+    }
+
+    private void gameOver() {
+        System.out.println("Score: " + state.getGameScore());
+        GLFW.glfwSetWindowShouldClose(window.getWindowId(), true);
     }
 }
